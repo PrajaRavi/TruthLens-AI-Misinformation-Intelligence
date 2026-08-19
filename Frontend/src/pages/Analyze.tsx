@@ -28,6 +28,7 @@ import axios from "axios";
 import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
+import { ApiAnalysisResult } from "@/components/MyAnalysisResult";
 
 type Stage = "input" | "processing" | "results";
 
@@ -144,25 +145,68 @@ export function AnalyzeClient() {
     }
   }
 
-  async function saveClaims(claims: any[]) {
+  async function saveClaims(claims: any[],evidence:any[],web_evidence:any[],supporting_evidence:any[],contradicting_evidence:any[],claim_assessment:any[],hive_assessment:any[],risk_assessment:any[]) {
     if (!claims?.length) return;
+    /*
+
     let filterClaims=claims.map((item:any)=>{
       return {text:item.text,user_input_id:item.user_input_id}
     })
-    const { data, error } = await supabase.from("claims").insert(filterClaims).select().single();
+    const { data, error } = await supabase.from("claims").insert(filterClaims);
 
     if (error) {
       console.error("Error storing claims:", error);
       throw error;
     }
 
-    return data;
+      */
+     for (let item of claims){
+        let filterClaim={text:item.text,user_input_id:item.user_input_id};
+        let OldClaimId=item.id;//This is  the  old id genrated by backend starting from 1
+        const {data,error} = await supabase.from("claims").insert(filterClaim).select().single();
+        if(error){
+          return console.log(error)
+        }
+        let evidence_filter=evidence.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let web_evidence_filter=web_evidence.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let supporting_evidence_filter=supporting_evidence.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let contradicting_evidence_filter=contradicting_evidence.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let claim_assesment_filter=claim_assessment.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let hive_assesment_filter=hive_assessment.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+        let risk_assesment_filter=risk_assessment.filter((item:any)=>{
+          return item.claim_id=OldClaimId
+        })
+
+        await saveEvidence(evidence_filter,data.id)
+        await saveWebEvidence(web_evidence_filter,data.id)
+        await saveContradictingEvidence(supporting_evidence_filter,data.id)
+        await saveSupportingEvidence(contradicting_evidence_filter,data.id)
+        await saveClaimAssessment(claim_assesment_filter,data.id)
+        await saveHiveAssessment(hive_assesment_filter,data.id)
+        await saveRiskAssessment(risk_assesment_filter,data.id)
+
+
+     }
+
+    return true
   }
 
   async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number) {
     if (!text || !tab || !user_id)
       return alert("required fields not found error in saveUserInput!!!!!");
-    alert("calling")
+    // alert("calling")
     const { data, error } = await supabase
       .from("user_input")
       .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence})
@@ -559,11 +603,13 @@ saveRiskAssessment([
     let ans:any[]=[]
     if(supporting_evidence.length>0){
       supporting_evidence.map((item:any)=>{
+        if(item.evidence_claim!="")
         ans.push(item.evidence_claim)
       })
     }
     if(contradicting_evidence.length>0){
       contradicting_evidence.map((item:any)=>{
+        if(item.evidence_claim!="")
         ans.push(item.evidence_claim)
       })
     }
@@ -580,7 +626,49 @@ saveRiskAssessment([
         description: "This feature is not implemented yet.",
       });
     }
+    /*
+    setStage("processing");
+    setSteps(
+      baseSteps.map((s, i) => ({
+        ...s,
+        status: i < 2 ? "done" : i === 2 ? "active" : "pending",
+      })),
+    );
 
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+
+    // Advance the timeline step by step.
+    baseSteps.forEach((_, idx) => {
+      if (idx < 3) return;
+      const t = setTimeout(
+        () => {
+          setSteps((prev) =>
+            prev.map((s, i) => ({
+              ...s,
+              status: i < idx ? "done" : i === idx ? "active" : "pending",
+            })),
+          );
+        },
+        (idx - 2) * 700,
+      );
+      timers.current.push(t);
+    });
+    const done = setTimeout(
+      () => {
+        setSteps((prev) => prev.map((s) => ({ ...s, status: "done" })));
+
+        setResult(resultByType[tab]);
+        setStage("results"); //this means now the api call is ended
+
+        
+      },
+      baseSteps.length * 700 + 400,
+    );
+    timers.current.push(done);
+*/
+
+    
     let validation_msg = await Validate_input(text);
     console.log(validation_msg);
     if (validation_msg?.error) {
@@ -627,11 +715,7 @@ saveRiskAssessment([
         // setResult(resultByType[tab]);
         // setStage("results"); //this means now the api call is ended
 
-        toast({
-          type: "success",
-          title: "Analysis complete",
-          description: "Risk assessment and sources are ready to review.",
-        });
+        
       },
       baseSteps.length * 700 + 400,
     );
@@ -656,7 +740,8 @@ saveRiskAssessment([
         }
         // await saveAnalysis(response);
         // Preparing data for showing in ui after analysis
-        let claims_data=await saveClaims(response.claims);
+        let claims_data=await saveClaims(response.claims,response.evidence,response.web_evidence,response.supporting_evidence,response.contradicting_evidence,response.claim_assessment,response.hive_assessment,response.risk_assessment);
+
         /*
         this claim data=> {
     "id": "d1166316-c227-428a-8815-0bb3806c8e05",
@@ -665,16 +750,13 @@ saveRiskAssessment([
     "user_input_id": "6320cd7a-3ada-4caa-a8c9-792431217d56"
 }
 
-        */
-       await saveEvidence(response.evidence,claims_data.id)
-       await saveWebEvidence(response.web_evidence,claims_data.id)
-       await saveContradictingEvidence(response.supporting_evidence,claims_data.id)
-       await saveSupportingEvidence(response.contradicting_evidence,claims_data.id)
-       await saveClaimAssessment(response.claim_assessment,claims_data.id)
-       await saveHiveAssessment(response.hive_assessment,claims_data.id)
-       await saveRiskAssessment(response.risk_assessment,claims_data.id)
-
-
+*/
+        if(claims_data==undefined){
+          return;
+        }
+        let newclaim:string[]=response.claims.map((item:any)=>{
+          return item.text
+        })
         //! finding the risk_score
         //! evidence-strength->coming soong
         //! category->coming soon
@@ -685,36 +767,46 @@ saveRiskAssessment([
         let dashboard_data = {
           id: user_input_id,
           title:text.slice(0,30)+ "...",
-          riskScore: response.risk_score,
           inputType:tab,
-          evidenceStrength:"coming soon",
-          status:"completed",
-          confidence:response.confidence,
+          riskScore: response.risk_score,
           riskLevel: response.risk_level,
+          confidence:response.confidence,
+          claimsCount: response.claims?.length,
+          evidenceStrength:"moderate",
+          category: "climate",
+          status:"completed",
           createdAt,
           submittedContent: text,
-          claims: response.claims,
-          claimsCount: response.claims?.length,
+           supporting_evidence :response.supporting_evidence,
+          contradicting_evidence :response.contradicting_evidence,
+          claims:newclaim,
           sourcesCount:
             response?.supporting_evidence?.length +
             response?.contradicting_evidence?.length,
-          category: "coming soon",
           assessmentSummary: assessmentSummary,
         };
         setResult(dashboard_data);
+        console.log("printing dashboard data")
+        console.log(dashboard_data)
+        toast({
+          type: "success",
+          title: "Analysis complete",
+          description: "Risk assessment and sources are ready to review.",
+        });
         setStage("results"); //this means now the api call is ended
         
       } else {
         console.log(response);
-        alert("something went wrong!!!!");
-      }
-    } catch (error) {
-      console.log(error);
-      setStage("input");
-      alert("error in research");
-    } finally {
-      setStage("results");
+      alert("something went wrong!!!!");
     }
+  } catch (error) {
+    console.log(error);
+    setStage("input");
+    alert("error in research");
+  } finally {
+    setStage("results");
+  }
+    
   }
 
   function reset() {
@@ -762,7 +854,7 @@ saveRiskAssessment([
             </Button>
           }
         />
-        <AnalysisResults analysis={result} />
+        <ApiAnalysisResult analysisResult={result}/>
       </div>
     );
   }

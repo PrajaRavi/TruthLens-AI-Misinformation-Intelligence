@@ -48,7 +48,7 @@ async def hello(input:ValidateInput):
       data=await Validate_input(input.input)
       return JSONResponse({'success':'true','msg':data})
   except Exception as e:
-      return HTTPException({'success':'false','error':str(e)})
+      return HTTPException(status_code=500,detail={'success':'false','error':str(e)})
 
   
 @app.get("/")
@@ -64,11 +64,14 @@ async def hello(input:ResearchBody):
      if(final_result):
        return JSONResponse({'success':'true','msg':final_result})
      else:
-       return HTTPException({'success':'false','msg':"Internal server error"})
+       return HTTPException(status_code=500,detail={'success':'false','msg':"Internal server error"})
         
     
   except Exception as e:
-    return HTTPException({'success':'false','msg':str(e)})
+    print("="*100)
+    print("error occured")
+    print(e)
+    return HTTPException(status_code=500,detail={'success':'false','msg':str(e)})
 
 
 

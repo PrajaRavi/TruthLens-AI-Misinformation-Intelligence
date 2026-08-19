@@ -9,7 +9,7 @@ from langgraph.types import interrupt, Command,Send
 from datetime import datetime
 from langchain_core.messages import BaseMessage,HumanMessage,SystemMessage,AIMessage
 from langchain_core.prompts import PromptTemplate
-
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama,OllamaEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from pydantic import BaseModel,Field
@@ -23,6 +23,10 @@ parser=StrOutputParser()
 load_dotenv()
 
 
+google_api_key=os.getenv("google_api_key")
+TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
+hive_api_key=os.getenv("hive_api_key")
+gemini_api_key=os.getenv("GEMINI_API_KEY")
 groq_llm = ChatGroq(
     model="openai/gpt-oss-120b",
     temperature=0.3, #->it is between 0 to 2  and it is creativity parameter if it is 0 then for same question it will give same ans alway but as we increase this number then our model gives diffrent ans on each time on asking the  same question
@@ -30,6 +34,7 @@ groq_llm = ChatGroq(
     timeout=None,
     max_retries=2,
 )
+
 phi_llm=ChatOllama(
     model="phi4-mini:3.8b",
     temperature=0.4
@@ -44,16 +49,24 @@ qwen_coder=ChatOllama(
     model="qwen2.5-coder:3b",
     temperature=0.4
 )
+# groq_llm = ChatGoogleGenerativeAI(
+#     model="gemini-3.5-flash-lite",
+#     # model="gemini-3.1-flash-lite-image",
+#     api_key=gemini_api_key,
+    
+#     temperature=0.7,
+#     max_tokens=None,
+#     timeout=None,
+#     max_retries=2,
+# )
+
 llama=ChatOllama(
     model="llama3.2:1b",
     temperature=0.4
 )
 
+# print(gemini_api_key)
 
-gorq_api_key=os.getenv("groq_api_key")
-google_api_key=os.getenv("google_api_key")
-TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
-hive_api_key=os.getenv("hive_api_key")
 
 #! for now my main targets are url[web_url,yt_video_url] and text 
     
@@ -356,7 +369,7 @@ INPUT:
 
 """
 
-    structured_llm = groq_llm.with_structured_output(ClaimsOutput)
+    structured_llm = groq_llm.with_structured_output(ClaimsOutput,method="json_schema")
 
     result = await structured_llm.ainvoke(prompt)
 
@@ -426,7 +439,7 @@ class HarmAssessment(BaseModel):
     harmful: bool
     reason: str
 
-sturc_llm_for_hive_analysis=phi_llm.with_structured_output(HarmAssessment)
+sturc_llm_for_hive_analysis=groq_llm.with_structured_output(HarmAssessment,method="json_schema")
 
 def hive_assesment_fanout(state:InvestigationState) -> List[Send]:
     """
@@ -659,9 +672,7 @@ class EvidenceAnalysis(BaseModel):
 async def evidence_analysis(
     state: InvestigationState) -> InvestigationState:
 
-    structured_llm = llama.with_structured_output(
-        EvidenceAnalysis
-    )
+    structured_llm = groq_llm.with_structured_output(EvidenceAnalysis,method="json_schema")
     print("evidence_analysis start")
     supporting_evidence = []
     contradicting_evidence = []
@@ -754,7 +765,7 @@ async def web_evidence_analysis(state:InvestigationState) -> InvestigationState:
 
     web_evidence = state["web_evidence"]
 
-    structured_llm = llama.with_structured_output(EvidenceAnalysis)
+    structured_llm = groq_llm.with_structured_output(EvidenceAnalysis,method="json_schema")
 
     for evidence_item in web_evidence:
 
@@ -786,7 +797,7 @@ Search relevance score:
 {relevance_score}
 
 Your task is to determine whether this web evidence
-supports or contradicts the USER CLAIM.
+supports or contradicts the USER CLAIM by just reading the given input do  not call any external tool as i do not have any tool.
 
 Classification rules:
 
@@ -871,10 +882,9 @@ class ClaimAssessmentResult(BaseModel):
     supporting_evidence_count: int
 
     contradicting_evidence_count: int
-
-claim_assesment_struc_op=phi_llm.with_structured_output(ClaimAssessmentResult)
 async def claim_assessment(state:InvestigationState) -> InvestigationState:
 
+    claim_assesment_struc_op=groq_llm.with_structured_output(ClaimAssessmentResult,method="json_schema")
     assessments = []
 
     for claim in state["claims"]:
@@ -1009,7 +1019,7 @@ hive moderation api assesment:
 """     
 # HARMFUL-CONTENT ASSESSMENT:
 # {hive_result}
-        result = await phi_llm.with_structured_output(
+        result = await groq_llm.with_structured_output(
             RiskAssessmentResult
         ).ainvoke(prompt)
         print("risk_assessment result")

@@ -45,16 +45,16 @@ function MetricPill({
 }
 
 export function AnalysisResults({ analysis }: { analysis: Analysis }) {
-  const primaryClaim = analysis.claims[0];
-  const supporting = primaryClaim?.evidence.filter(
-    (e) => e.type === "supporting"
-  );
-  const contradicting = primaryClaim?.evidence.filter(
-    (e) => e.type === "contradicting"
-  );
-  const missing = primaryClaim?.evidence.filter(
-    (e) => e.type === "missing-context"
-  );
+  // const primaryClaim = analysis.claims[0];
+  // const supporting = primaryClaim?.evidence.filter(
+  //   (e) => e.type === "supporting"
+  // );
+  // const contradicting = primaryClaim?.evidence.filter(
+  //   (e) => e.type === "contradicting"
+  // );
+  // const missing = primaryClaim?.evidence.filter(
+  //   (e) => e.type === "missing-context"
+  // );
 
   return (
     <div className="space-y-6">
@@ -144,7 +144,7 @@ export function AnalysisResults({ analysis }: { analysis: Analysis }) {
       </div>
 
       {/* Claim vs Evidence */}
-      {primaryClaim && (
+      {/* {primaryClaim && (
         <Card>
           <CardHeader>
             <CardTitle>Claim vs. Evidence</CardTitle>
@@ -205,10 +205,10 @@ export function AnalysisResults({ analysis }: { analysis: Analysis }) {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Detected claims */}
-      <div>
+      {/* <div>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">
             Detected Claims
@@ -220,7 +220,7 @@ export function AnalysisResults({ analysis }: { analysis: Analysis }) {
             <ClaimCard key={claim.id} claim={claim} defaultOpen={i === 0} />
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Multimodal signals */}
       {/* <MultimodalSignals signals={analysis.signals} /> */}
