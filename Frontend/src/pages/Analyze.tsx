@@ -29,6 +29,7 @@ import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
 import { ApiAnalysisResult } from "@/components/MyAnalysisResult";
+import { AnalysisResult2, ClaimAssessment ,RiskAssessment} from "@/components/AnalysisResult2";
 
 type Stage = "input" | "processing" | "results";
 
@@ -58,6 +59,9 @@ export function AnalyzeClient() {
   const [stage, setStage] = useState<Stage>("input");
   const [steps, setSteps] = useState<ProcessingStep[]>(baseSteps);
   const [result, setResult] = useState<Analysis | null>(null);
+  let [ClaimAssessment,setClaimAssessment]=useState<ClaimAssessment[]>()
+  let [RiskAssesment,setRiskAssesment]=useState<RiskAssessment[]>([])
+  let [Urls,setUrls]=useState<string[]>([])
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   interface Inputvalidation {
@@ -147,6 +151,8 @@ export function AnalyzeClient() {
 
   async function saveClaims(claims: any[],evidence:any[],web_evidence:any[],supporting_evidence:any[],contradicting_evidence:any[],claim_assessment:any[],hive_assessment:any[],risk_assessment:any[]) {
     if (!claims?.length) return;
+
+
     /*
 
     let filterClaims=claims.map((item:any)=>{
@@ -160,6 +166,8 @@ export function AnalyzeClient() {
     }
 
       */
+
+
      for (let item of claims){
         let filterClaim={text:item.text,user_input_id:item.user_input_id};
         let OldClaimId=item.id;//This is  the  old id genrated by backend starting from 1
@@ -220,6 +228,7 @@ export function AnalyzeClient() {
 
     return data;
   }
+
   async function saveEvidence(evidence: any[],claim_id:string) {
     if (!evidence?.length) return;
     let filterdEvidence=evidence.map((item:any)=>{
@@ -401,6 +410,15 @@ saveSupportingEvidence([
 
     return data;
   }
+
+function GetURlList(data:any[]):string[]{
+if(data.length==0) return []
+ let urls:string[]=data.map((item)=>{
+  return item.url
+ })
+ return urls
+}
+
 
 
   async function saveClaimAssessment(claimAssessment: any[],claim_id:string) {
@@ -599,6 +617,9 @@ saveRiskAssessment([
     let risk_level = filterdData.risk_level || 10;
     return { risk_score, risk_level };
   }
+
+  /*
+
   function get_assesment_summmary(supporting_evidence:any[],contradicting_evidence:any[]):any{
     let ans:any[]=[]
     if(supporting_evidence.length>0){
@@ -617,6 +638,7 @@ saveRiskAssessment([
 
   }
 
+  */
   async function runAnalysis() {
     if (!canAnalyze) return;
     if (tab != "text") {
@@ -627,6 +649,8 @@ saveRiskAssessment([
       });
     }
     /*
+
+
     setStage("processing");
     setSteps(
       baseSteps.map((s, i) => ({
@@ -666,6 +690,7 @@ saveRiskAssessment([
       baseSteps.length * 700 + 400,
     );
     timers.current.push(done);
+
 */
 
     
@@ -743,6 +768,8 @@ saveRiskAssessment([
         let claims_data=await saveClaims(response.claims,response.evidence,response.web_evidence,response.supporting_evidence,response.contradicting_evidence,response.claim_assessment,response.hive_assessment,response.risk_assessment);
 
         /*
+
+
         this claim data=> {
     "id": "d1166316-c227-428a-8815-0bb3806c8e05",
     "created_at": "2026-08-18T12:08:46.656381+00:00",
@@ -750,20 +777,35 @@ saveRiskAssessment([
     "user_input_id": "6320cd7a-3ada-4caa-a8c9-792431217d56"
 }
 
+
 */
         if(claims_data==undefined){
           return;
         }
-        let newclaim:string[]=response.claims.map((item:any)=>{
-          return item.text
-        })
+        
         //! finding the risk_score
         //! evidence-strength->coming soong
         //! category->coming soon
-        
-        
-        let assessmentSummary=get_assesment_summmary(response.supporting_evidence,response.contradicting_evidence);
 
+        // preparing cliam assessment
+        let filterClaim=response.claim_assessment.map((item:any)=>{
+          let supporting_evidence=response.supporting_evidence.filter((item_new:any)=>{
+            return item.claim_id==item_new.claim_id
+          })
+          let contradicting_evidence=response.contradicting_evidence.filter((item_new:any)=>{
+            return item.claim_id==item_new.claim_id
+          })
+          return {...item,supporting_evidence,contradicting_evidence}
+        })
+
+        setClaimAssessment(filterClaim)
+        setRiskAssesment(response.risk_assessment)
+        let urlList1=GetURlList(response.web_evidence)
+        let urlList2=GetURlList(response.evidence)
+        setUrls([...urlList1,...urlList2])
+
+        
+        /*
         let dashboard_data = {
           id: user_input_id,
           title:text.slice(0,30)+ "...",
@@ -788,12 +830,15 @@ saveRiskAssessment([
         setResult(dashboard_data);
         console.log("printing dashboard data")
         console.log(dashboard_data)
+        */
+
         toast({
           type: "success",
           title: "Analysis complete",
           description: "Risk assessment and sources are ready to review.",
         });
         setStage("results"); //this means now the api call is ended
+        setResult(response.claim_assessment)
         
       } else {
         console.log(response);
@@ -854,7 +899,7 @@ saveRiskAssessment([
             </Button>
           }
         />
-        <ApiAnalysisResult analysisResult={result}/>
+        <AnalysisResult2 claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
       </div>
     );
   }

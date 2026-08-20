@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/theme";
 import { useToast } from "@/components/ui/Toast";
 import {supabase} from "../utils/supabase"
 import { useNavigate } from "react-router-dom";
-import { AnalysisResult } from "@/components/AnalysisResult2";
+import AnalysisResultDemo, { AnalysisResult } from "@/components/AnalysisResult2";
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -88,36 +88,7 @@ toast({
 
   return (
     <div>
-      <AnalysisResult claim_assessment={[{
-        "claim_id": "1",
-        "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
-        "verdict": "Supported",
-        "confidence": 0.9,
-        "reason": "The fact-checked claim is substantially the same as the user's claim, and the fact-checker's conclusion about the fact-checked claim is True/Correct.",
-        "supporting_evidence":[{
-                "matching_score": 0.9,
-                "reason": "The fact-checked claim is substantially the same as the user's claim, and the fact-checker's conclusion about the fact-checked claim is True/Correct.",
-                "claim_id": "1",
-                "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
-                "evidence_claim": "Consuming alcohol beverages or vodka will reduce risk of COVID-19 infection",
-                "user_input_id": "RaviPraj"
-              }] ,
-        "contradicting_evidence": [{
-                "matching_score": 0.9,
-                "reason": "The fact-checked claim is substantially the same as the user's claim, and the fact-checker's conclusion about the fact-checked claim is True/Correct.",
-                "claim_id": "1",
-                "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
-                "evidence_claim": "Consuming alcohol beverages or vodka will reduce risk of COVID-19 infection",
-                "user_input_id": "RaviPraj"
-              }],
-        "user_input_id": "RaviPraj"
-      }]} risk_assessments={[{"claim_id": "1",
-        "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
-        "risk_level": "CRITICAL",
-        "risk_score": 90,
-        "reason": "The claim has been assessed as TRUE, which is medically inaccurate. Alcohol consumption can impair the immune system and interfere with the effectiveness of COVID-19 vaccines, increasing the risk of severe illness. The high confidence in the factual assessment and the presence of contradicting evidence (3) outweigh the supporting evidence (1), and the content is classified as harmful due to its potential to cause health risks.",
-        "user_input_id": "RaviPraj"}
-]} urls={["https://www.boomlive.in/health/does-drinking-alcohol-prevent-coronavirus-6935,https://www.boomlive.in/health/does-drinking-alcohol-prevent-coronavirus-6935"]} />
+      <AnalysisResultDemo/>
     </div>
     // <AuthShell
     //   title="Create your account"

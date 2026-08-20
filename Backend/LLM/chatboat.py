@@ -16,6 +16,10 @@ from pydantic import BaseModel,Field
 from langgraph.types import interrupt
 from dotenv import load_dotenv
 from langchain_tavily import TavilySearch
+from langchain_classic.utils.math import cosine_similarity
+from langchain_nomic import NomicEmbeddings
+
+
 
 from typing import Annotated,Literal
 from langgraph.checkpoint.memory import InMemorySaver #!stores things in RAM
@@ -27,6 +31,7 @@ google_api_key=os.getenv("google_api_key")
 TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
 hive_api_key=os.getenv("hive_api_key")
 gemini_api_key=os.getenv("GEMINI_API_KEY")
+nomic_api_key=os.getenv("NOMIC_API_KEY")
 groq_llm = ChatGroq(
     model="openai/gpt-oss-120b",
     temperature=0.3, #->it is between 0 to 2  and it is creativity parameter if it is 0 then for same question it will give same ans alway but as we increase this number then our model gives diffrent ans on each time on asking the  same question
@@ -39,6 +44,12 @@ phi_llm=ChatOllama(
     model="phi4-mini:3.8b",
     temperature=0.4
 )
+embeddings = NomicEmbeddings(
+    nomic_api_key=nomic_api_key,
+    model="nomic-embed-text-v1.5", 
+    inference_mode="remote"  # This tells LangChain to use the API, not your CPU
+)
+
 
 
 qwen=ChatOllama(
@@ -49,16 +60,16 @@ qwen_coder=ChatOllama(
     model="qwen2.5-coder:3b",
     temperature=0.4
 )
-# groq_llm = ChatGoogleGenerativeAI(
-#     model="gemini-3.5-flash-lite",
-#     # model="gemini-3.1-flash-lite-image",
-#     api_key=gemini_api_key,
+gemini_llm = ChatGoogleGenerativeAI(
+    model="gemini-3.5-flash-lite",
+    # model="gemini-3.1-flash-lite-image",
+    api_key=gemini_api_key,
     
-#     temperature=0.7,
-#     max_tokens=None,
-#     timeout=None,
-#     max_retries=2,
-# )
+    temperature=0.7,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
 
 llama=ChatOllama(
     model="llama3.2:1b",
@@ -92,6 +103,7 @@ class InvestigationState(TypedDict):
 
     investigation_id: str
     user_id: str
+    th:float
     thread_id: str #! this will act as user_input_id inside each field
     
 
@@ -439,7 +451,7 @@ class HarmAssessment(BaseModel):
     harmful: bool
     reason: str
 
-sturc_llm_for_hive_analysis=groq_llm.with_structured_output(HarmAssessment,method="json_schema")
+sturc_llm_for_hive_analysis=gemini_llm.with_structured_output(HarmAssessment,method="json_schema")
 
 def hive_assesment_fanout(state:InvestigationState) -> List[Send]:
     """
@@ -495,19 +507,18 @@ def fan_out_evidence_fact(state:InvestigationState) -> List[Send]:
     an independent, parallel execution of 'worker_node' for every task.
     """
     claims: List[Claim] = state['claims']
-
+    th=state.get("th",0.75)
     # For each task in the plan, dispatch a Send object to the worker node
     
     return [
         Send(
             node="google_fact_checks_worker",  # Target node name registered in the graph
             arg={
-                'claim':claim['text'],'id':claim['id'],'thread_id':state['thread_id']
+                'claim':claim['text'],'id':claim['id'],'th':th
             }
         )
         for claim in claims
     ]
-
 import requests
 
 
@@ -536,8 +547,12 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
     # print("ravi")
     # print(payload)
     claim=payload["claim"]
+    th=payload["th"]
+    #!here add a LLM which will extract important keywords from claim [extension]
+    # ex->hello gyus drinking alcohol helps to defeat corona virus
+    # it will become->drinking alcohol prevent corona virus
+    
     claim_id=payload['id']
-    thread_id=payload['thread_id']
 
     params = {
         "query": claim,
@@ -552,14 +567,15 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
     )
 
     response.raise_for_status()
-
+    
     data = response.json()
 
     evidences = []
 
+    #! every claim given by google fact tools api is not relevant so to find the relvant claim i have to perform cosine similarity and only claim having score>85 will be kept 
     for result in data.get("claims", []):
 
-        claim_text = result.get("text", "")
+        claim_text = result.get("text", "")  #! This the claim done by the publisher and rating means when the publisher performed research about this text then if it was truth or rumour
 
         claimant = result.get("claimant", "")
 
@@ -568,26 +584,25 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
         for review in claim_review:
 
             publisher = review.get("publisher", {})
-
+            #! here we have one more data->publisher site
             source = publisher.get("name", "Unknown")
-
             url = review.get("url", "")
-
             rating = review.get("textualRating")
-
-            evidences.append({
-                "source": source,
-                "claim": claim_text,
-                "claim_id":claim_id,
-                "rating": rating,
-                "url": url,
-                "user_input_id":thread_id
-         
-            })
+            document_emba=embeddings.embed_query(claim_text)
+            query_emba=embeddings.embed_query(claim)
+            score=cosine_similarity([query_emba],[document_emba])[0] #the both values inside 
+            if(score>th):        
+                evidences.append({
+                    "source": source,
+                    "claim": claim_text, #! this is by google fact tools api
+                    "claim_id":claim_id,
+                    "claim_text":claim,  #! this is my claim_text for which this google fact tool api is called
+                    "rating": rating,
+                    "url": url,
+            
+                })
     print("search_fact_checks end ")
-
     return {"evidence":evidences}
-
 
     
 def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
@@ -597,13 +612,14 @@ def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
     an independent, parallel execution of 'worker_node' for every task.
     """
     claims: List[Claim] = state['claims']
+    th=state.get("th",0.75)
 
     # For each task in the plan, dispatch a Send object to the worker node
     return [
         Send(
             node="search_web_evidence_worker",  # Target node name registered in the graph
             arg={
-                'claim':claim['text'],'id':claim['id'],'thread_id':state['thread_id']
+                'claim':claim['text'],'id':claim['id'],'th':th
             }
         )
         for claim in claims
@@ -611,15 +627,14 @@ def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
 
 
 
-async def search_web_evidence_worker(
-    payload:dict
-) ->InvestigationState:
+
+async def search_web_evidence_worker(payload:dict) ->InvestigationState:
     tavily_tool=TavilySearch(max_results=1,topic="general")
     print("search_web_evidence start")
     # print(payload)
     claim=payload['claim']
     claim_id=payload['id']
-    thread_id=payload['thread_id']
+    th=payload['th']
     response = tavily_tool.invoke(
         input=claim,
         max_results=2,
@@ -628,21 +643,21 @@ async def search_web_evidence_worker(
     evidence = []
 
     for result in response.get("results", []):
-
-        evidence.append({
-            "source": result.get("title"),
-            "claim":result.get("title"),
-            "claim_id":claim_id,
-            "content": result.get("content"),
-            "url": result.get("url"),
-            "relevance_score": result.get("score"),
-            "source_type": "web_search",
-            "user_input_id":thread_id
-
-        })
+        score=float(result.get("score"))
+        if(score>th):     
+            evidence.append({
+                "source": result.get("title"),
+                "title": result.get("title"),
+                "claim_text":claim,
+                "claim_id":claim_id,
+                "content": result.get("content"),
+                "url": result.get("url"),
+                "relevance_score": result.get("score"),
+                "source_type": "web_search"
+            })
+    
     print("search_web_evidence end")
     return {"web_evidence":evidence}
-
 
 
 class EvidenceAnalysis(BaseModel):
@@ -765,7 +780,7 @@ async def web_evidence_analysis(state:InvestigationState) -> InvestigationState:
 
     web_evidence = state["web_evidence"]
 
-    structured_llm = groq_llm.with_structured_output(EvidenceAnalysis,method="json_schema")
+    structured_llm = gemini_llm.with_structured_output(EvidenceAnalysis,method="json_schema")
 
     for evidence_item in web_evidence:
 
@@ -882,9 +897,100 @@ class ClaimAssessmentResult(BaseModel):
     supporting_evidence_count: int
 
     contradicting_evidence_count: int
-async def claim_assessment(state:InvestigationState) -> InvestigationState:
+CLAIM_ASSESSMENT_SYSTEM_PROMPT = """
+You are an expert fact-checking and claim assessment analyst.
 
-    claim_assesment_struc_op=groq_llm.with_structured_output(ClaimAssessmentResult,method="json_schema")
+Your task is to assess ONE user claim using ALL of the provided
+supporting and contradicting evidence.
+
+IMPORTANT RULES:
+
+1. Analyze the USER CLAIM as the proposition that needs to be verified.
+
+2. Consider ALL provided evidence together. Do not make the final
+   decision based on only one evidence item.
+
+3. Supporting evidence is evidence that directly supports the factual
+   proposition of the user claim.
+
+4. Contradicting evidence is evidence that directly opposes the factual
+   proposition of the user claim.
+
+5. Evidence that is only loosely related, discusses the same topic,
+   or does not establish whether the claim is true or false must not
+   be treated as strong evidence.
+
+6. Do not assume that an evidence source supports a claim merely because
+   it contains similar words or discusses the same subject.
+
+7. Give greater importance to evidence that directly addresses the
+   exact claim.
+
+8. If the evidence is conflicting, incomplete, indirect, or insufficient
+   to establish the truth of the claim, do NOT guess. Use "UNVERIFIED".
+
+9. The verdict must represent the relationship between the USER CLAIM
+   and the available evidence.
+
+10. Confidence must be a value between 0 and 1 and should represent
+    how confident you are in the verdict based on only the provided
+    evidence.
+
+11. The reason must clearly explain:
+    - what the claim asserts,
+    - what the strongest evidence says,
+    - whether the evidence supports or contradicts the claim,
+    - and why the final verdict was chosen.
+
+12. Do not use outside knowledge or perform web searches.
+    Only use the evidence provided in the input.
+
+VERDICT DEFINITIONS:
+
+- "TRUE":
+  The available evidence sufficiently supports the factual proposition
+  made by the user claim.
+
+- "FALSE":
+  The available evidence sufficiently contradicts the factual proposition
+  made by the user claim.
+
+- "PARTIALLY_TRUE":
+  The claims have equal no of supporting document and contradicting document but not 0
+  -For example:
+    -`Claim`:
+    "The government launched a ₹50,000 scholarship, and every student in India is eligible."
+    -`Evidence`:
+    Government announcement confirms a ₹50,000 scholarship, but eligibility is limited to students meeting specific criteria.
+
+- "MISLEADING":
+  -The evidences may contain true information but creates an improper conclusion
+  -Use Misleading when the underlying information isn't necessarily completely false, but the way it is presented gives a substantially incorrect impression.
+  -Example:
+`claim`:
+    "Scientists say alcohol can kill coronavirus."
+'Evidence`:
+    Alcohol-based sanitizer can kill certain viruses on surfaces.
+
+- "UNVERIFIED":
+  The available evidence is insufficient, ambiguous, indirect, unrelated,
+  or conflicting such that the claim cannot confidently be established
+  as true or false.
+  -Example:
+  `claim`:"A new study found that drinking a particular herbal mixture increases immunity by 73%."
+
+Return only the fields defined by the provided structured output schema.
+
+"""
+
+claim_assesment_struc_op=gemini_llm.with_structured_output(ClaimAssessmentResult,method="json_schema")
+
+async def claim_assessment(state:InvestigationState) -> InvestigationState:
+    """
+    Assesses each claim using all supporting and contradicting evidence
+    associated with that claim.
+    """
+
     assessments = []
 
     for claim in state["claims"]:
@@ -892,53 +998,68 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
         claim_id = claim["id"]
         claim_text = claim["text"]
 
-        # Get evidence relevant to this claim
+        # Evidence supporting this claim
         supporting = [
             item
-            for item in state["supporting_evidence"]
+            for item in state.get("supporting_evidence", [])
             if item["claim_id"] == claim_id
         ]
 
+        # Evidence contradicting this claim
         contradicting = [
             item
-            for item in state["contradicting_evidence"]
+            for item in state.get("contradicting_evidence", [])
             if item["claim_id"] == claim_id
         ]
 
-        # web_supporting = [
-        #     item
-        #     for item in state["web_supporting_evidence"]
-        #     if item["claim_id"] == claim_id
-        # ]
+        # Combine both types of evidence
+        evidence = {
+            "supporting_evidence": supporting,
+            "contradicting_evidence": contradicting
+        }
 
-        # web_contradicting = [
-        #     item
-        #     for item in state["web_contradicting_evidence"]
-        #     if item["claim_id"] == claim_id
-        # ]
+        prompt = f"""
+USER CLAIM:
+{claim_text}
 
-        all_supporting = supporting 
-        all_contradicting = contradicting
-        combined=all_supporting+all_contradicting
-        print(combined)
-        print("combined")
-        for data in combined:
-        # Send these to LLM
-            result = await claim_assesment_struc_op.ainvoke(f"read the given input : {data}")
+CLAIM ID:
+{claim_id}
 
-            assessments.append({
-                "claim_id": claim_id,
-                "claim_text": claim_text,
-                "verdict": result.verdict,
-                "confidence": result.confidence,
-                "reason": result.reason,
-                "supporting_evidence_count": len(all_supporting),
-                "contradicting_evidence_count": len(all_contradicting),
-                "user_input_id":state['thread_id']
-            })
-            
+EVIDENCE:
+{evidence}
 
-        
+Assess this claim using ALL of the evidence provided.
+
+Remember:
+- Do not assess each evidence item independently.
+- Consider the evidence collectively.
+- Do not use outside knowledge.
+- Do not search the web.
+- If the evidence is insufficient or ambiguous, return "Not Entailed".
+"""
+
+        result = await claim_assesment_struc_op.ainvoke(
+            [
+                {
+                    "role": "system",
+                    "content": CLAIM_ASSESSMENT_SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        assessments.append({
+            "claim_id": claim_id,
+            "claim_text": claim_text,
+            "verdict": result.verdict,
+            "confidence": result.confidence,
+            "reason": result.reason,
+            "supporting_evidence_count": len(supporting),
+            "contradicting_evidence_count": len(contradicting)
+        })
 
     state["claim_assessment"] = assessments
 
@@ -949,6 +1070,97 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
 def finding_eveidence(state:InvestigationState):
   pass
 
+
+RISK_ASSESSMENT_SYSTEM_PROMPT = """
+You are an AI misinformation risk assessment analyst.
+
+Your task is to determine how risky a user claim is by combining:
+
+1. The factual assessment of the claim.
+2. The harmful-content assessment of the claim.
+
+You MUST NOT perform new fact-checking.
+You MUST NOT use outside knowledge.
+You MUST NOT change or reinterpret the factual verdict.
+
+The factual assessment and harmful-content assessment are already
+provided to you. Your job is only to determine the risk created by
+the combination of these two assessments.
+
+FACTUAL VERDICT:
+
+
+- "TRUE":
+  The available evidence sufficiently supports the factual proposition
+  made by the user claim.
+
+- "FALSE":
+  The available evidence sufficiently contradicts the factual proposition
+  made by the user claim.
+
+- "PARTIALLY_TRUE":
+  The claims have equal no of supporting document and contradicting document but not 0
+  -For example:
+    -`Claim`:
+    "The government launched a ₹50,000 scholarship, and every student in India is eligible."
+    -`Evidence`:
+    Government announcement confirms a ₹50,000 scholarship, but eligibility is limited to students meeting specific criteria.
+
+- "MISLEADING":
+  -The evidences may contain true information but creates an improper conclusion
+  -Use Misleading when the underlying information isn't necessarily completely false, but the way it is presented gives a substantially incorrect impression.
+  -Example:
+`claim`:
+    "Scientists say alcohol can kill coronavirus."
+'Evidence`:
+    Alcohol-based sanitizer can kill certain viruses on surfaces.
+
+- "UNVERIFIED":
+  The available evidence is insufficient, ambiguous, indirect, unrelated,
+  or conflicting such that the claim cannot confidently be established
+  as true or false.
+  -Example:
+  `claim`:"A new study found that drinking a particular herbal mixture increases immunity by 73%."
+
+RISK FACTORS:
+
+Increase the risk when:
+
+- The claim is Contradicted.
+- Confidence in the factual assessment is high.
+- There is strong contradicting evidence.
+- The claim could cause users to make harmful decisions.
+- The harmful-content assessment indicates that the content is harmful.
+
+A false or contradicted claim is NOT automatically Critical.
+Consider the potential impact and harmfulness as well.
+
+HARMFUL CONTENT:
+
+If harmful = true, increase the risk according to the severity
+indicated by the harmful-content assessment.
+
+If harmful = false, do not add a harmful-content penalty.
+
+SCORING:
+
+0-20   = LOW
+21-40  = MEDIUM
+41-70  = HIGH
+71-100 = CRITICAL
+
+The risk_score must be an integer between 0 and 100.
+
+The risk_level must correspond to the risk_score.
+
+The reason must clearly explain:
+- the factual verdict,
+- confidence/evidence strength,
+- harmful-content status,
+- and why these factors resulted in the final risk.
+
+Return only the fields defined by the structured output schema.
+"""
 
 class RiskAssessmentResult(BaseModel):
     risk_level: str = Field(
@@ -963,7 +1175,8 @@ class RiskAssessmentResult(BaseModel):
         description="Brief explanation of why this risk level was assigned"
     )
 
-  
+risk_assesment_struct_output=gemini_llm.with_structured_output(RiskAssessmentResult)
+
 async def risk_assessment(state:InvestigationState) -> InvestigationState:
     """
       what it will do->How dangerous or risky is this piece of content, considering both whether its claims are misleading/false and whether the content contains harmful characteristics?
@@ -1019,9 +1232,16 @@ hive moderation api assesment:
 """     
 # HARMFUL-CONTENT ASSESSMENT:
 # {hive_result}
-        result = await groq_llm.with_structured_output(
-            RiskAssessmentResult
-        ).ainvoke(prompt)
+        result = await risk_assesment_struct_output.ainvoke([
+                        {
+                            "role": "system",
+                            "content": RISK_ASSESSMENT_SYSTEM_PROMPT
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ])
         print("risk_assessment result")
         print(result)
 
@@ -1036,8 +1256,33 @@ hive moderation api assesment:
 
     return {"risk_assessment":final_result}
 
+#! calculating  overall risk_score,risk_level,confidence_score  
+"""
+overall_score =
+    70% × average_score
+    + 30% × maximum_score
+
+Assessment 1 → 95 CRITICAL
+Assessment 2 → 30 MODERATE
+Assessment 3 → 25 MODERATE
+
+average = (95 + 30 + 25) / 3
+        = 50
+
+maximum = 95
+
+overall =
+    0.70 × 50
+    + 0.30 × 95
+
+    = 63.5
+    
+
+->risk_score,risk_level,confidence[score] 
+   
+"""
+
 def Calc_overall_risk_score_and_confidence(state:InvestigationState) -> InvestigationState:
-    print("*********************calculating values****************************")
     final_risk_score:float=0.0
     avg_risk_score:float=0.0
     max_risk_score=state['risk_assessment'][0]['risk_score']
@@ -1066,6 +1311,8 @@ def Calc_overall_risk_score_and_confidence(state:InvestigationState) -> Investig
     avg_confidence_score=float(sum)/len(state['claim_assessment'])
     final_confidence_score=0.70*float(avg_confidence_score)+0.30*float(max_confidence_score)
     return {'risk_score':final_risk_score,'risk_level':risk_level,'confidence':final_confidence_score}
+            
+
 
 graph = StateGraph(InvestigationState)
 graph.add_node("classify_input", classify_input)

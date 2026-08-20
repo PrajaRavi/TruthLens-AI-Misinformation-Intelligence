@@ -97,7 +97,7 @@ function CircularRisk({ score }: { score: number }) {
       <div
         className="relative h-44 w-44"
         role="img"
-        aria-label={`Overall risk score ${score} out of 100`}
+        aria-label={`Average risk score ${score} out of 100`}
       >
         <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
           <circle
@@ -247,7 +247,7 @@ function UrlPreview({ url }: { url: string }) {
   );
 }
 
-export function AnalysisResult({
+export function AnalysisResult2({
   risk_assessments,
   claim_assessment,
   urls,
@@ -262,14 +262,11 @@ export function AnalysisResult({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Analysis Result"
-        description="Risk assessment and evidence-based claim evaluation."
-      />
+      
       <Card className="overflow-hidden">
         <div className={`h-1.5 ${overall.bar}`} />
         <CardHeader>
-          <CardTitle>Overall Misinformation Risk</CardTitle>
+          <CardTitle>Average Misinformation Risk</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:items-center">
@@ -414,6 +411,15 @@ const demoRiskAssessments: RiskAssessment[] = [
       "The claim is medically inaccurate. Alcohol can impair the immune system and interfere with COVID-19 vaccine effectiveness, increasing the risk of severe illness.",
     user_input_id: "RaviPraj",
   },
+  {
+    claim_id: "2",
+    claim_text: "Drinking alcohol helps to defeat the coronavirus.",
+    risk_level: "CRITICAL",
+    risk_score: 30,
+    reason:
+      "The claim is medically inaccurate. Alcohol can impair the immune system and interfere with COVID-19 vaccine effectiveness, increasing the risk of severe illness.",
+    user_input_id: "RaviPraj",
+  },
 ];
 const demoEvidence: Evidence = {
   matching_score: 0.9,
@@ -436,11 +442,21 @@ const demoClaimAssessments: ClaimAssessment[] = [
     contradicting_evidence: [demoEvidence],
     user_input_id: "RaviPraj",
   },
+  {
+    claim_id: "1",
+    claim_text: "Drinking alcohol helps to defeat the coronavirus.",
+    verdict: "Supported",
+    confidence: 0.3,
+    reason: "The API's supplied fact-checking assessment for this claim.",
+    supporting_evidence: [demoEvidence],
+    contradicting_evidence: [demoEvidence],
+    user_input_id: "RaviPraj",
+  },
 ];
 
 export default function AnalysisResultDemo() {
   return (
-    <AnalysisResult
+    <AnalysisResult2
       risk_assessments={demoRiskAssessments}
       claim_assessment={demoClaimAssessments}
       urls={[

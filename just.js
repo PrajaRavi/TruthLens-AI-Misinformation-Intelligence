@@ -1,7 +1,3 @@
-
-// uvicorn main_new:app --reload
-
-let rav=[{name:'ravi',id:4}]
-for (let item of rav){
-console.log(item)
-}
+let a=[1,2,3]
+let b=[4,5,6]
+console.log([...a,...b])
