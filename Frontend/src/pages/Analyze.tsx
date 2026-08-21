@@ -29,7 +29,7 @@ import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
 import { ApiAnalysisResult } from "@/components/MyAnalysisResult";
-import { AnalysisResult2, ClaimAssessment ,RiskAssessment} from "@/components/AnalysisResult2";
+import { AnalysisResult2, ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
 
 type Stage = "input" | "processing" | "results";
 
@@ -51,6 +51,7 @@ const resultByType: Record<InputType, Analysis> = {
 };
 
 export function AnalyzeClient() {
+  const {RecentAnalysis,GetuserSignal}=useUser();
   const searchParams = useSearchParams();
   const presetId = searchParams.get("id");
   const { toast } = useToast();
@@ -74,7 +75,7 @@ export function AnalyzeClient() {
   const [source, setSource] = useState("");
   const [author, setAuthor] = useState("");
   const [pubDate, setPubDate] = useState("");
-  const { user } = useUser();
+  const { user,setGetuserSignal } = useUser();
 
   const [url, setUrl] = useState("");
   const [imageFile, setImageFile] = useState<UploadedFile | null>(null);
@@ -86,13 +87,17 @@ export function AnalyzeClient() {
 
   // Preset (view existing analysis)
   useEffect(() => {
+    //! basically when user click on the eye icon in history then using the id of the user_input i have to fetch all the details and have to show on dashboard
     if (presetId) {
-      const found = analyses.find((a) => a.id === presetId);
-      if (found) {
-        setResult(found);
-        setTab(found.inputType);
+      const found = RecentAnalysis.find((a) => a.id === presetId);
+      // if (found) {
+        // setResult(found);
         setStage("results");
-      }
+        setClaimAssessment(found?.claims)
+        setRiskAssesment(found?.risk_assessment)
+        setUrls(found?.sources)
+        setTab(found?.input_type);
+      // }
     }
   }, [presetId]);
 
@@ -170,42 +175,46 @@ export function AnalyzeClient() {
 
      for (let item of claims){
         let filterClaim={text:item.text,user_input_id:item.user_input_id};
-        let OldClaimId=item.id;//This is  the  old id genrated by backend starting from 1
+        let OldClaimId=item.id;// ! This is  the  old id genrated by backend starting from 1
         const {data,error} = await supabase.from("claims").insert(filterClaim).select().single();
         if(error){
           return console.log(error)
         }
+
         let evidence_filter=evidence.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let web_evidence_filter=web_evidence.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let supporting_evidence_filter=supporting_evidence.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let contradicting_evidence_filter=contradicting_evidence.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let claim_assesment_filter=claim_assessment.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let hive_assesment_filter=hive_assessment.filter((item:any)=>{
-          return item.claim_id=OldClaimId
-        })
-        let risk_assesment_filter=risk_assessment.filter((item:any)=>{
-          return item.claim_id=OldClaimId
+          return item.claim_id==OldClaimId
         })
 
+        let web_evidence_filter=web_evidence.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+
+        let supporting_evidence_filter=supporting_evidence.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+
+        let contradicting_evidence_filter=contradicting_evidence.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+        let claim_assesment_filter=claim_assessment.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+        let hive_assesment_filter=hive_assessment.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+        let risk_assesment_filter=risk_assessment.filter((item:any)=>{
+          return item.claim_id==OldClaimId
+        })
+
+        
+        
         await saveEvidence(evidence_filter,data.id)
         await saveWebEvidence(web_evidence_filter,data.id)
-        await saveContradictingEvidence(supporting_evidence_filter,data.id)
-        await saveSupportingEvidence(contradicting_evidence_filter,data.id)
+        await saveContradictingEvidence(contradicting_evidence_filter,data.id)
+        await saveSupportingEvidence(supporting_evidence_filter,data.id)
         await saveClaimAssessment(claim_assesment_filter,data.id)
         await saveHiveAssessment(hive_assesment_filter,data.id)
         await saveRiskAssessment(risk_assesment_filter,data.id)
-
-
      }
 
     return true
@@ -237,7 +246,9 @@ export function AnalyzeClient() {
         "claim_text":item.claim,
         "claim_id":claim_id,
         "rating":item.rating,
+        "url":item.url,
         "user_input_id":item.user_input_id,
+
       }
     })
 
@@ -286,7 +297,7 @@ export function AnalyzeClient() {
     let filterData=webEvidence.map((item:any)=>{
       return {
         "source":item.source,
-        "claim_text":item.claim,
+        "claim_text":item.claim_text,
         "content":item.content,
         "url":item.url,
         "relevance_score":item.relevance_score,
@@ -756,6 +767,7 @@ saveRiskAssessment([
       });
       let response = data?.msg;
       let success = data?.success;
+      console.log(response)
       if (success) {
         let createdAt = new Date().toISOString();
         let data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence);
@@ -763,8 +775,8 @@ saveRiskAssessment([
           console.log("user input is not saved in DB")
           return
         }
-        // await saveAnalysis(response);
-        // Preparing data for showing in ui after analysis
+
+        //!  Preparing data for showing in ui after analysis
         let claims_data=await saveClaims(response.claims,response.evidence,response.web_evidence,response.supporting_evidence,response.contradicting_evidence,response.claim_assessment,response.hive_assessment,response.risk_assessment);
 
         /*
@@ -850,6 +862,7 @@ saveRiskAssessment([
     alert("error in research");
   } finally {
     setStage("results");
+    setGetuserSignal(!GetuserSignal)
   }
     
   }
@@ -886,7 +899,7 @@ saveRiskAssessment([
     );
   }
 
-  if (stage === "results" && result) {
+  if (stage === "results" ) {
     return (
       <div className="space-y-6">
         <PageHeader

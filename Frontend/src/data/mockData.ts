@@ -20,19 +20,14 @@ export const currentUser: User = {
   plan: "Research Pro",
 };
 
+
 export const dashboardStats: DashboardStats = {
   totalAnalyses: 1284,
   highRiskClaims: 187,
   verifiedClaims: 742,
   sourcesChecked: 3421,
   averageConfidence: 87,
-  trends: {
-    totalAnalyses: 12.4,
-    highRiskClaims: -4.1,
-    verifiedClaims: 8.7,
-    sourcesChecked: 15.2,
-    averageConfidence: 2.3,
-  },
+  
 };
 
 export const riskDistribution: RiskDistribution[] = [

@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 from langchain_tavily import TavilySearch
 from langchain_classic.utils.math import cosine_similarity
 from langchain_nomic import NomicEmbeddings
-
+from LLM.llms import groq_llm,gemini_llm,hive_api_key,google_fact_api_key,embeddings
+from LLM.ResearchChatbot import SEARCH_CHATBOT,format_research_output
 
 
 from typing import Annotated,Literal
@@ -27,56 +28,8 @@ parser=StrOutputParser()
 load_dotenv()
 
 
-google_api_key=os.getenv("google_api_key")
-TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
-hive_api_key=os.getenv("hive_api_key")
-gemini_api_key=os.getenv("GEMINI_API_KEY")
-nomic_api_key=os.getenv("NOMIC_API_KEY")
-groq_llm = ChatGroq(
-    model="openai/gpt-oss-120b",
-    temperature=0.3, #->it is between 0 to 2  and it is creativity parameter if it is 0 then for same question it will give same ans alway but as we increase this number then our model gives diffrent ans on each time on asking the  same question
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-)
 
-phi_llm=ChatOllama(
-    model="phi4-mini:3.8b",
-    temperature=0.4
-)
-embeddings = NomicEmbeddings(
-    nomic_api_key=nomic_api_key,
-    model="nomic-embed-text-v1.5", 
-    inference_mode="remote"  # This tells LangChain to use the API, not your CPU
-)
-
-
-
-qwen=ChatOllama(
-    model="qwen2.5:0.5b",
-    temperature=0.4
-)
-qwen_coder=ChatOllama(
-    model="qwen2.5-coder:3b",
-    temperature=0.4
-)
-gemini_llm = ChatGoogleGenerativeAI(
-    model="gemini-3.5-flash-lite",
-    # model="gemini-3.1-flash-lite-image",
-    api_key=gemini_api_key,
-    
-    temperature=0.7,
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-)
-
-llama=ChatOllama(
-    model="llama3.2:1b",
-    temperature=0.4
-)
-
-# print(gemini_api_key)
+# print(GOOGLE_API_KEY)
 
 
 #! for now my main targets are url[web_url,yt_video_url] and text 
@@ -514,7 +467,7 @@ def fan_out_evidence_fact(state:InvestigationState) -> List[Send]:
         Send(
             node="google_fact_checks_worker",  # Target node name registered in the graph
             arg={
-                'claim':claim['text'],'id':claim['id'],'th':th
+                'claim':claim['text'],'id':claim['id'],'th':th,'user_input_id':state['thread_id']
             }
         )
         for claim in claims
@@ -548,6 +501,7 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
     # print(payload)
     claim=payload["claim"]
     th=payload["th"]
+    user_input_id=payload["user_input_id"]
     #!here add a LLM which will extract important keywords from claim [extension]
     # ex->hello gyus drinking alcohol helps to defeat corona virus
     # it will become->drinking alcohol prevent corona virus
@@ -556,7 +510,7 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
 
     params = {
         "query": claim,
-        "key": google_api_key,
+        "key": google_fact_api_key,
         "pageSize": 10,
     }
 
@@ -599,6 +553,7 @@ async def google_fact_checks_worker(payload: dict) -> InvestigationState:
                     "claim_text":claim,  #! this is my claim_text for which this google fact tool api is called
                     "rating": rating,
                     "url": url,
+                    "user_input_id":user_input_id
             
                 })
     print("search_fact_checks end ")
@@ -619,7 +574,7 @@ def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
         Send(
             node="search_web_evidence_worker",  # Target node name registered in the graph
             arg={
-                'claim':claim['text'],'id':claim['id'],'th':th
+                'claim':claim['text'],'id':claim['id'],'th':th,'user_input_id':state['thread_id']
             }
         )
         for claim in claims
@@ -635,6 +590,7 @@ async def search_web_evidence_worker(payload:dict) ->InvestigationState:
     claim=payload['claim']
     claim_id=payload['id']
     th=payload['th']
+    user_input_id=payload['user_input_id']
     response = tavily_tool.invoke(
         input=claim,
         max_results=2,
@@ -652,6 +608,7 @@ async def search_web_evidence_worker(payload:dict) ->InvestigationState:
                 "claim_id":claim_id,
                 "content": result.get("content"),
                 "url": result.get("url"),
+                "user_input_id":user_input_id,
                 "relevance_score": result.get("score"),
                 "source_type": "web_search"
             })
@@ -897,93 +854,192 @@ class ClaimAssessmentResult(BaseModel):
     supporting_evidence_count: int
 
     contradicting_evidence_count: int
+
+claim_assesment_struc_op=gemini_llm.with_structured_output(ClaimAssessmentResult)
+
 CLAIM_ASSESSMENT_SYSTEM_PROMPT = """
 You are an expert fact-checking and claim assessment analyst.
 
-Your task is to assess ONE user claim using ALL of the provided
-supporting and contradicting evidence.
+Your task is to assess ONE USER CLAIM using ALL available evidence,
+including:
+
+1. Supporting evidence
+2. Contradicting evidence
+3. Research Agent findings
+
+The Research Agent is an investigator, NOT the final judge.
+Its conclusion must NOT automatically be treated as true.
+Evaluate the findings and the sources mentioned in the research report
+before deciding the verdict.
 
 IMPORTANT RULES:
 
-1. Analyze the USER CLAIM as the proposition that needs to be verified.
+1. Analyze the USER CLAIM as the exact proposition that needs to be
+   verified.
 
-2. Consider ALL provided evidence together. Do not make the final
-   decision based on only one evidence item.
+2. Consider ALL available evidence together:
+   - supporting evidence
+   - contradicting evidence
+   - Research Agent findings
 
 3. Supporting evidence is evidence that directly supports the factual
-   proposition of the user claim.
+   proposition of the USER CLAIM.
 
 4. Contradicting evidence is evidence that directly opposes the factual
-   proposition of the user claim.
+   proposition of the USER CLAIM.
 
-5. Evidence that is only loosely related, discusses the same topic,
-   or does not establish whether the claim is true or false must not
-   be treated as strong evidence.
+5. Research Agent findings may contain:
+   - discovered facts
+   - identified entities
+   - relationships between entities
+   - supporting information
+   - contradictory information
+   - information that could not be verified
 
-6. Do not assume that an evidence source supports a claim merely because
-   it contains similar words or discusses the same subject.
+   Use these findings to improve your understanding of the claim,
+   especially when the claim contains ambiguous people, organizations,
+   events, dates, or relationships.
 
-7. Give greater importance to evidence that directly addresses the
-   exact claim.
+6. Do NOT blindly trust the Research Agent's conclusion.
+   Treat its findings as research information and evaluate whether the
+   cited evidence actually supports or contradicts the USER CLAIM.
 
-8. If the evidence is conflicting, incomplete, indirect, or insufficient
-   to establish the truth of the claim, do NOT guess. Use "UNVERIFIED".
+7. Evidence that is only loosely related, discusses the same topic,
+   contains similar words, or does not establish whether the claim is
+   true or false must NOT be treated as strong evidence.
 
-9. The verdict must represent the relationship between the USER CLAIM
-   and the available evidence.
+8. Give greater importance to evidence that directly addresses the
+   exact factual proposition of the USER CLAIM.
 
-10. Confidence must be a value between 0 and 1 and should represent
-    how confident you are in the verdict based on only the provided
-    evidence.
+9. When the Research Agent identifies an entity or person, use that
+   information to correctly understand the context of the claim.
+   However, do not assume the identified entity is correct unless the
+   available evidence supports the identification.
 
-11. The reason must clearly explain:
-    - what the claim asserts,
-    - what the strongest evidence says,
+10. If supporting and contradicting evidence conflict, compare their
+    relevance, directness, and reliability.
+
+11. If the evidence is incomplete, indirect, ambiguous, unrelated,
+    or insufficient to establish whether the claim is true or false,
+    DO NOT guess. Return "UNVERIFIED".
+
+12. Do NOT make a verdict based only on the number of evidence items.
+    The quality, directness, and relevance of evidence are more
+    important than the quantity.
+
+13. Do not use outside knowledge or perform additional web searches.
+    Use ONLY the evidence and Research Agent findings provided in
+    the input.
+
+14. The verdict must represent the relationship between the USER CLAIM
+    and the available evidence.
+
+15. Confidence must be a value between 0 and 1.
+
+    Confidence represents how certain you are that the selected verdict
+    is correct based ONLY on the provided evidence.
+
+    Use the following guidance:
+
+    - 0.90 - 1.00:
+      Very strong and direct evidence with little or no meaningful
+      contradiction.
+
+    - 0.75 - 0.89:
+      Strong evidence supporting the verdict, but some uncertainty or
+      limited conflicting information exists.
+
+    - 0.50 - 0.74:
+      Moderate evidence. The overall direction is reasonably clear,
+      but important uncertainty remains.
+
+    - 0.30 - 0.49:
+      Weak, incomplete, indirect, or conflicting evidence.
+
+    - 0.00 - 0.29:
+      Very little reliable evidence exists.
+
+    Do NOT increase confidence simply because many sources are present.
+    Multiple sources repeating the same unsupported information should
+    not be treated as independent strong evidence.
+
+16. The reason must clearly explain:
+
+    - what the USER CLAIM asserts,
+    - what the strongest available evidence says,
+    - what the Research Agent discovered,
     - whether the evidence supports or contradicts the claim,
-    - and why the final verdict was chosen.
-
-12. Do not use outside knowledge or perform web searches.
-    Only use the evidence provided in the input.
+    - and why the selected verdict is appropriate.
 
 VERDICT DEFINITIONS:
 
-- "TRUE":
-  The available evidence sufficiently supports the factual proposition
-  made by the user claim.
+TRUE:
+The available evidence sufficiently supports the factual proposition
+made by the USER CLAIM.
 
-- "FALSE":
-  The available evidence sufficiently contradicts the factual proposition
-  made by the user claim.
+FALSE:
+The available evidence sufficiently contradicts the factual proposition
+made by the USER CLAIM.
 
-- "PARTIALLY_TRUE":
-  The claims have equal no of supporting document and contradicting document but not 0
-  -For example:
-    -`Claim`:
-    "The government launched a ₹50,000 scholarship, and every student in India is eligible."
-    -`Evidence`:
-    Government announcement confirms a ₹50,000 scholarship, but eligibility is limited to students meeting specific criteria.
+PARTIALLY_TRUE:
+The USER CLAIM contains multiple factual components and some of those
+components are supported while other components are contradicted or
+not supported.
 
-- "MISLEADING":
-  -The evidences may contain true information but creates an improper conclusion
-  -Use Misleading when the underlying information isn't necessarily completely false, but the way it is presented gives a substantially incorrect impression.
-  -Example:
-`claim`:
-    "Scientists say alcohol can kill coronavirus."
-'Evidence`:
-    Alcohol-based sanitizer can kill certain viruses on surfaces.
+Do NOT use PARTIALLY_TRUE simply because there are equal numbers of
+supporting and contradicting sources.
 
-- "UNVERIFIED":
-  The available evidence is insufficient, ambiguous, indirect, unrelated,
-  or conflicting such that the claim cannot confidently be established
-  as true or false.
-  -Example:
-  `claim`:"A new study found that drinking a particular herbal mixture increases immunity by 73%."
+Example:
 
-Return only the fields defined by the provided structured output schema.
+Claim:
+"The government launched a ₹50,000 scholarship and every student in
+India is eligible."
 
+Evidence:
+The government confirms a ₹50,000 scholarship, but eligibility is
+limited to students meeting specific criteria.
+
+Therefore, the claim is PARTIALLY_TRUE.
+
+MISLEADING:
+The underlying information contains some true or relevant facts, but
+the way the information is presented creates a substantially incorrect
+or misleading impression.
+
+Example:
+
+Claim:
+"Scientists say alcohol can kill coronavirus."
+
+Evidence:
+Alcohol-based sanitizer can kill certain viruses on surfaces.
+
+The evidence contains a true fact about alcohol-based sanitizer, but
+it does not establish that drinking alcohol kills coronavirus.
+Therefore, the claim is MISLEADING.
+
+UNVERIFIED:
+The available evidence is insufficient, ambiguous, indirect, unrelated,
+or conflicting such that the claim cannot confidently be established
+as true or false.
+
+Example:
+
+Claim:
+"A new study found that drinking a particular herbal mixture increases
+immunity by 73%."
+
+If the provided evidence does not sufficiently verify this study or
+finding, return UNVERIFIED.
+
+FINAL RULE:
+
+Return ONLY the fields defined by the provided structured output schema.
+Do not include additional fields, explanations outside the schema,
+or markdown.
 """
 
-claim_assesment_struc_op=gemini_llm.with_structured_output(ClaimAssessmentResult,method="json_schema")
+
 
 async def claim_assessment(state:InvestigationState) -> InvestigationState:
     """
@@ -997,6 +1053,9 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
 
         claim_id = claim["id"]
         claim_text = claim["text"]
+        response=await SEARCH_CHATBOT.ainvoke({'messages':[{'role':'user','content':claim_text}]})
+        research_agent_report=format_research_output(response)
+
 
         # Evidence supporting this claim
         supporting = [
@@ -1021,12 +1080,12 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
         prompt = f"""
 USER CLAIM:
 {claim_text}
-
-CLAIM ID:
-{claim_id}
-
-EVIDENCE:
+--------------------------------------------------
+EVIDENCE[supporting+contradicting]:
 {evidence}
+--------------------------------------------------
+RESEARCH AGENT REPORT:
+{research_agent_report}
 
 Assess this claim using ALL of the evidence provided.
 
@@ -1057,6 +1116,7 @@ Remember:
             "verdict": result.verdict,
             "confidence": result.confidence,
             "reason": result.reason,
+            "user_input_id":state['thread_id'],
             "supporting_evidence_count": len(supporting),
             "contradicting_evidence_count": len(contradicting)
         })

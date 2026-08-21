@@ -111,16 +111,10 @@ export interface Analysis {
 export interface DashboardStats {
   totalAnalyses: number;
   highRiskClaims: number;
-  verifiedClaims: number;
+  verifiedClaims?: number;
   sourcesChecked: number;
   averageConfidence: number;
-  trends: {
-    totalAnalyses: number;
-    highRiskClaims: number;
-    verifiedClaims: number;
-    sourcesChecked: number;
-    averageConfidence: number;
-  };
+  
 }
 
 export interface RiskDistribution {

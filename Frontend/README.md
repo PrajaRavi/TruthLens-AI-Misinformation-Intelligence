@@ -19,7 +19,7 @@ Use `npm run build` to create a production build in `dist/`.
 
 ```text
 ==>Storing everything in db and retrieving it for showing in dashboard
--->create table-> user_input(id,text,user_id,input_type)
+-->create table-> user_input(id,text,user_id,type)
 
 ->for now i will use InMemorySaver checkpointer
 

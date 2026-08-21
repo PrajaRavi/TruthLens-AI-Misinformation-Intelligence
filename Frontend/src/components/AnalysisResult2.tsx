@@ -401,7 +401,7 @@ export function AnalysisResult2({
   );
 }
 
-const demoRiskAssessments: RiskAssessment[] = [
+export const demoRiskAssessments: RiskAssessment[] = [
   {
     claim_id: "1",
     claim_text: "Drinking alcohol helps to defeat the coronavirus.",
@@ -431,7 +431,7 @@ const demoEvidence: Evidence = {
     "Consuming alcohol beverages or vodka will reduce risk of COVID-19 infection",
   user_input_id: "RaviPraj",
 };
-const demoClaimAssessments: ClaimAssessment[] = [
+export const demoClaimAssessments: ClaimAssessment[] = [
   {
     claim_id: "1",
     claim_text: "Drinking alcohol helps to defeat the coronavirus.",

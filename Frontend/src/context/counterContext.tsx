@@ -1,3 +1,4 @@
+import { FactCheckReport } from '@/components/DataTable2';
 import React, { createContext, useContext, Dispatch, SetStateAction } from 'react';
 
 // Define the structure of your User object
@@ -12,7 +13,10 @@ export interface UserContextType {
   user: User | undefined;
   setUser: Dispatch<SetStateAction<User | undefined>>;
   setGetuserSignal: Dispatch<SetStateAction<boolean>>;
-  GetuserSignal:boolean
+  GetuserSignal:boolean;
+  RecentAnalysis:FactCheckReport[];
+  setRecentAnalysis:Dispatch<SetStateAction<FactCheckReport[]>>;
+  GlobalLoadingState:boolean
 }
 
 // Create the context with an initial value of undefined

@@ -367,7 +367,7 @@ export default function Landing() {
               team can see, understand, and trust.
             </p>
             <Link
-              href="/signup"
+              href={localStorage.getItem(localUser)?"/analyze":"/signup"}
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-primary shadow-lg transition-transform hover:-translate-y-0.5"
             >
               Start analyzing for free <ArrowRight className="h-4 w-4" />

@@ -1,6 +1,8 @@
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn, formatNumber } from "@/lib/utils";
+import { CircularLoader } from "@/utils/CircularLoader";
+import { useUser } from "@/context/counterContext";
 
 interface StatCardProps {
   label: string;
@@ -23,6 +25,7 @@ export function StatCard({
 }: StatCardProps) {
   const positive = trend !== undefined && trend >= 0;
   const good = positive === trendPositiveIsGood;
+  const {GlobalLoadingState}=useUser()
 
   return (
     <Card className="p-5 transition-shadow hover:shadow-md">
@@ -53,11 +56,18 @@ export function StatCard({
           </span>
         )}
       </div>
+      {GlobalLoadingState?<div className="w-10 h-10">
+          <CircularLoader/>
+          </div>:<div>
+
       <p className="mt-4 text-2xl font-bold tracking-tight text-foreground tabular-nums">
         {formatNumber(value)}
         {suffix}
       </p>
+
       <p className="mt-0.5 text-sm text-muted">{label}</p>
+      </div>}
+      
     </Card>
   );
 }

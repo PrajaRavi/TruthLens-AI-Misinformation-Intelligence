@@ -1,3 +1,6 @@
+import { useUser } from "@/context/counterContext";
+import { CircularLoader } from "@/utils/CircularLoader";
+
 interface DonutSegment {
   label: string;
   value: number;
@@ -19,6 +22,7 @@ export function DonutChart({
   centerLabel,
   centerValue,
 }: DonutChartProps) {
+  const {GlobalLoadingState}=useUser()
   const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
   const radius = (size - thickness) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -26,6 +30,10 @@ export function DonutChart({
 
   return (
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-8">
+      {GlobalLoadingState?<div className="w-10 h-10">
+                <CircularLoader/>
+                </div>:<div className="flex gap-6 items-center">
+
       <div
         className="relative shrink-0"
         style={{ width: size, height: size }}
@@ -88,6 +96,8 @@ export function DonutChart({
           );
         })}
       </ul>
-    </div>
+    </div>}
+      </div>
+
   );
 }
