@@ -16,6 +16,12 @@ from pydantic import BaseModel,Field
 from langgraph.types import interrupt
 from dotenv import load_dotenv
 from langchain_tavily import TavilySearch
+from urllib.parse import urlparse
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled,VideoUnavailable,InvalidVideoId,NoTranscriptFound,NotTranslatable
+from utils.utils_func import extract_video_id,format_docs
+from yt_dlp import YoutubeDL
+import trafilatura 
+
 from langchain_classic.utils.math import cosine_similarity
 from langchain_nomic import NomicEmbeddings
 from LLM.llms import groq_llm,gemini_llm,hive_api_key,google_fact_api_key,embeddings
@@ -55,24 +61,35 @@ class InvestigationState(TypedDict):
     # ─────────────────────────────
 
     investigation_id: str
+    th:float #! between 0 and 1
     user_id: str
-    th:float
     thread_id: str #! this will act as user_input_id inside each field
+
+    #!summary considering all the feilds of every object
+    
+    claim_assessment_summary:str|None
+    risk_assessment_summary:str|None
     
 
 
     input_type: Literal[
         "text",
         "url",
-
         #! in future i will implement it
-        # "image",
-        # "audio",
-        # "video",
+        "image",
+        "audio",
+        "video",
+        "youtube",
+        "webpage"
     ]
+
 
     input_text: str | None
     input_url: str | None
+    source_url:str|None
+    webpage_title:str|None
+
+    
     # media_ids: list[str] #!useful when uploading audio and video
 
 
@@ -83,7 +100,8 @@ class InvestigationState(TypedDict):
     # modalities: list[str]  # ! what type of contents are prsent may be implement in future useful when provide multiple mix inputs[litle confusing at this point]
 
     extracted_text: str | None #this text is from any image beacuse pure text will be store inside input_text[futue] 
-    transcript: str | None #It will store transcript of any yt video or any video/audio having transcript[future]
+    transcript: str | None #! It will store transcript of any yt video or any video/audio having transcript or any webpage [implementing]
+    transcript_summary:str|None #! i can't give whole transcript as it is to my llm hence i am summarizing it
 
     claims: list[Claim]
     
@@ -166,6 +184,7 @@ class InvestigationState(TypedDict):
     risk_score: float | None
     risk_level: str | None
     confidence: float | None
+    yt_thumbnail:str|None
 
     insufficient_evidence: bool
 
@@ -197,7 +216,46 @@ class InvestigationState(TypedDict):
 from typing import Literal
 from urllib.parse import urlparse
 
-def classify_input(state:InvestigationState) ->InvestigationState:
+async def extract_webpage_content(url: str) -> dict:
+
+    try:
+
+        downloaded = trafilatura.fetch_url(url)
+
+        if not downloaded:
+            raise ValueError(
+                "Unable to download webpage"
+            )
+
+        # Extract structured object containing metadata + body text
+        data = trafilatura.bare_extraction(downloaded)
+        if data:
+            title = data.title          # Extracted page title
+            text = data.text         # Main article text
+            author = data.author
+
+            if not text or not text.strip():
+                raise ValueError(
+                    "Could not extract readable content from webpage"
+                )
+
+            return {
+                "source_type": "webpage",
+                "source_url": url,
+                "text": text,
+                "title":title,
+                "author":author
+            }
+
+    except Exception as e:
+
+        raise ValueError(
+            f"Unable to extract webpage content: {str(e)}"
+        )
+
+
+    
+async def classify_input(state:InvestigationState) ->InvestigationState:
     print('running classify input')
     """
     Classifies the user's input as text or URL-based content.
@@ -205,6 +263,7 @@ def classify_input(state:InvestigationState) ->InvestigationState:
     Current implementation:
     - Normal text -> returns state unchanged
     - URL -> classifies the URL for future processing
+    -and also extract transcript from videos and webpages
     """
 
     input_text = state['input_text'].strip()
@@ -229,7 +288,7 @@ def classify_input(state:InvestigationState) ->InvestigationState:
     # ─────────────────────────────────────
     # URL
     # ─────────────────────────────────────
-
+    
     hostname = parsed_url.netloc.lower()
     path = parsed_url.path.lower()
 
@@ -240,7 +299,7 @@ def classify_input(state:InvestigationState) ->InvestigationState:
     # Common video URLs
     elif path.endswith((".mp4", ".webm", ".mov", ".mkv", ".m3u8")):
         input_type = "video"
-
+        
     # Common audio URLs
     elif path.endswith((".mp3", ".wav", ".ogg", ".m4a", ".aac")):
         input_type = "audio"
@@ -248,25 +307,181 @@ def classify_input(state:InvestigationState) ->InvestigationState:
     # Everything else is treated as a webpage for now
     else:
         input_type = "webpage"
-
+    print("chala hu mai bhai")    
     # Future implementation
-    if input_type == "youtube":
-        pass
+    return {'input_type':input_type,"input_url":input_text}
 
-    elif input_type == "video":
-        pass
 
-    elif input_type == "audio":
-        pass
-
-    elif input_type == "webpage":
-        pass
-
-    # For now, return state
-    print("classify input completed")
+def input_type_is_text(state:InvestigationState)->InvestigationState:
     return state
+def input_type_is_url(state:InvestigationState)->InvestigationState:
+    print("input_type_is_url start")
+    return state
+def input_router(state:InvestigationState)->Literal["input_type_is_text","input_type_is_url"]:
+    if(state['input_type']=="audio"):
+        pass
+    elif(state['input_type']=="video"):
+        pass
+    elif(state['input_type']=="image"):
+        pass
+    elif(state['input_type']=="text"):
+        return "input_type_is_text"
+    elif(state['input_type']=="url" or state['input_type']=="youtube" or state['input_type']=="webpage"):
+        return "input_type_is_url"
 
+async def handling_input_type_url(state:InvestigationState)->InvestigationState:
+    print("handling_input_type_url")
+    if(state['input_type']=="youtube"):
 
+        # ! Now i have to fetch the transScript of that yt video and further processing will be same
+
+        video_id=extract_video_id(url=state['input_url'])
+        if(video_id=="Invalid YouTube URL"):
+                return print("Error !!!!",video_id)
+                # 1. fetch transcript
+        try:
+            transcript_list = YouTubeTranscriptApi().fetch(video_id=video_id, languages=["en","hi"])
+            transcript = " ".join(snippet.text for snippet in transcript_list)
+            # 2. Fetch title and thumbnail metadata
+            ydl_opts = {
+                'skip_download': True,
+                'quiet': True,
+                    }
+        except VideoUnavailable:
+                print("This video is not available")
+                return
+                    
+                    
+        except NotTranslatable:
+                print("This video is not translateble")
+                return
+                    
+                    
+        
+        except NoTranscriptFound:
+                print("This video doesn't contains any transcript")
+                return
+        
+                    
+        
+        except TranscriptsDisabled:
+                print("No captions available for this video.")
+                return
+        
+                    
+        
+        except Exception as e:
+                print("An error occured",str(e))      
+                return
+        print("hello mai ravi")
+        with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(state['input_url'], download=False)
+                title = info.get('title')
+                thumbnail = info.get('thumbnail')
+                return {'webpage_title':title,"yt_thumbnail":thumbnail,'transcript':transcript}
+    elif(state['input_type']=="webpage"):
+         data=await extract_webpage_content(state['input_url'])
+         title=data['title']
+         return {'webpage_title':title,'transcript':data['text']}
+
+EVENT_EXTRACTION_SYSTEM_PROMPT = """
+You are an analysis-content extraction agent in a misinformation and
+harmful-content detection system.
+
+Your task is to process the provided content and retain ONLY the parts
+that are relevant for factual, misinformation, safety, or harmful-content
+analysis.
+
+Do not create a normal summary.
+
+Instead, remove irrelevant conversational content and extract the
+important events, claims, statements, allegations, actions, incidents,
+and their necessary context.
+
+REMOVE content such as:
+- greetings and introductions
+- "welcome to my channel"
+- requests to like, subscribe, or share
+- advertisements and sponsorships
+- repeated statements
+- filler words and casual conversation
+- personal introductions that are unrelated to the topic
+- jokes or small talk that have no analytical relevance
+- unrelated stories or discussion
+- video outro content
+
+KEEP content that may be relevant to analysis, including:
+
+1. Factual claims
+   Example:
+   "Google is going to hire 10,000 employees in India."
+
+2. Events and incidents
+   Example:
+   "The company announced that it closed three factories."
+
+3. Allegations or accusations
+   Example:
+   "The politician was accused of accepting illegal payments."
+
+4. Health, safety, violence, sexual, self-harm, drug, hate, or other
+   potentially harmful statements.
+
+5. Claims involving people, companies, governments, organizations,
+   products, places, dates, numbers, statistics, or events.
+
+6. Predictions or future events.
+   Preserve words such as "may", "might", "expected", and "will".
+
+7. Rumors, reports, or statements attributed to other people.
+   Preserve the attribution.
+
+8. Corrections, denials, disagreements, or contrasting statements.
+
+9. Context that is necessary to correctly understand an important claim.
+
+IMPORTANT:
+
+- Do not fact-check anything.
+- Do not decide whether a claim is true or false.
+- Do not use outside knowledge.
+- Do not invent missing information.
+- Do not change the meaning of the original content.
+- Preserve names, dates, numbers, locations, organizations, and other
+  important entities.
+- Preserve negations such as "not", "never", "didn't", and "has not".
+- Preserve uncertainty such as "may", "might", "allegedly", "reportedly",
+  and "according to".
+- Preserve who made a statement when attribution is present.
+
+If a statement is potentially important but its meaning depends on
+nearby context, include enough surrounding context to preserve its
+meaning.
+
+The output should be a coherent piece of text containing ONLY the
+analysis-relevant content.
+
+Do not produce a verdict, risk score, fact-checking result, or claim
+classification.
+"""
+
+async def event_extrator_from_transcript(state:dict):
+   transcript=state['transcript']
+   prompt=f"""summarize this transcript {transcript}"""
+   result=await groq_llm.ainvoke([
+                    {
+                        "role": "system",
+                        "content": EVENT_EXTRACTION_SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ])
+   result=format_research_output(result.content)
+   return {'input_text':result}
+  
+  
 
 
 
@@ -1342,55 +1557,345 @@ overall =
    
 """
 
-def Calc_overall_risk_score_and_confidence(state:InvestigationState) -> InvestigationState:
-    final_risk_score:float=0.0
-    avg_risk_score:float=0.0
-    max_risk_score=state['risk_assessment'][0]['risk_score']
-    sum=0
-    for data in state['risk_assessment']:
-        if(data['risk_score']>max_risk_score):
-            max_risk_score=data['risk_score']
-        sum+=data['risk_score']
-    avg_risk_score=float(sum)/len(state['risk_assessment'])
-    final_risk_score=0.70*float(avg_risk_score)+0.30*float(max_risk_score)
-    if(final_risk_score>=0 and final_risk_score<30):
-        risk_level="LOW"
-    elif(final_risk_score>=30 and final_risk_score<60):
-        risk_level="MODERATE"
-    elif(final_risk_score>=60 and final_risk_score<90):
-        risk_level="HIGH"
-    else:
-        risk_level="CRITICAL"
-        
-    sum=0
-    max_confidence_score=state['claim_assessment'][0]['confidence']
-    for data in state['claim_assessment']:
-            if(data['confidence']>max_confidence_score):
-                max_confidence_score=data['confidence']
-            sum+=data['confidence']
-    avg_confidence_score=float(sum)/len(state['claim_assessment'])
-    final_confidence_score=0.70*float(avg_confidence_score)+0.30*float(max_confidence_score)
-    return {'risk_score':final_risk_score,'risk_level':risk_level,'confidence':final_confidence_score}
-            
+SUMMARIZE_RISK_ASSESSMENT_PROMPT = """
+You are a risk assessment analyst specializing in insurance claims and
+content safety.
 
+Your task is to analyze the COMPLETE risk assessment data provided to you
+and generate ONE detailed, context-aware risk summary.
 
+The input contains multiple risk assessment objects. Each object contains:
+
+- claim_id
+- claim_text
+- risk_score
+- risk_level
+- reason
+
+The `reason` explains why the particular risk_score and risk_level were
+assigned and whether the claim content is harmful or not.
+
+IMPORTANT:
+You must understand and analyze the data carefully, but explain the final
+result in VERY SIMPLE, CLEAR, EVERYDAY ENGLISH.
+
+Imagine that you are explaining the result to someone who has no technical
+knowledge and has difficulty understanding complicated words.
+
+LANGUAGE AND WRITING RULES:
+
+1. Use very simple English.
+2. Use short and clear sentences.
+3. Avoid technical, legal, medical, or complicated words whenever possible.
+4. If a difficult word is necessary, immediately explain it using simple
+   words.
+5. Do not use complicated phrases just to sound professional.
+6. Explain WHAT the risk is and WHY it is considered risky in simple words.
+7. Explain risk scores and risk levels in a way that is easy to understand.
+8. Do not use unnecessary jargon.
+9. Do not make the summary sound like a technical report.
+10. The summary should feel like a knowledgeable person calmly explaining
+    the situation to another person.
+11. Keep the summary detailed, but make every sentence easy to understand.
+12. Do not use childish language. The language should be simple but still
+    professional and meaningful.
+
+ANALYSIS INSTRUCTIONS:
+
+1. Analyze EVERY risk assessment object.
+2. Consider EVERY field of every risk assessment object.
+3. Do not analyze the claims completely in isolation. Compare and connect
+   the risk findings across all claims.
+4. Understand why each risk_score was assigned.
+5. Understand why each risk_level was assigned.
+6. Carefully read the reason for each claim to understand whether the
+   content is harmful or not.
+7. Identify claims with particularly high risk.
+8. Identify claims with particularly low risk.
+9. Identify common risk patterns across multiple claims.
+10. Identify whether multiple claims show similar harmful or unsafe
+    content.
+11. Identify important differences between the risks of different claims.
+12. Check whether the risk_score, risk_level, and reason make sense
+    together.
+13. Point out important cases where they do not seem to match.
+14. Do not assume that a high risk score automatically means the content
+    is harmful. Use the provided reason and other information to understand
+    why the score was given.
+15. Do not assume that a low risk score automatically means everything is
+    safe. Consider the reason and the complete context.
+16. Do not invent facts or information that is not present in the data.
+17. Do not simply repeat every risk assessment object.
+18. Combine the information from all claims into one meaningful summary.
+19. Focus on the most important findings rather than repeating the same
+    information multiple times.
+
+The final summary should clearly explain:
+
+- What the overall risk situation looks like.
+- Which claims have the highest risks and why.
+- Which claims have the lowest risks and why.
+- What the different risk scores mean in simple words.
+- What the different risk levels mean in simple words.
+- Whether the claims contain harmful or non-harmful content.
+- Any common risk patterns found across the claims.
+- Any important differences between claims.
+- Any unusual or concerning findings.
+- Any cases where the score, risk level, and reason do not seem to agree.
+- The final overall risk conclusion.
+
+IMPORTANT FINAL OUTPUT RULE:
+
+Write the final summary as if you are explaining the results to a normal
+person who does not understand risk assessment.
+
+For example, instead of:
+
+"The dataset demonstrates a significant concentration of high-severity
+risk indicators."
+
+Say:
+
+"Several claims have a high risk level. This is mainly because their
+reasons show content or situations that may cause harm."
+
+Instead of:
+
+"The risk assessment reveals inconsistent scoring across claims."
+
+Say:
+
+"Some claims have a risk score that does not seem to fully match their
+risk level or the reason given. These claims may need another look."
+
+Do NOT copy these examples into the final answer. They only show the style
+you should follow.
+
+Return ONLY the detailed risk assessment summary as plain text.
+"""
+
+async def summarize_risk_assessment(state:InvestigationState)->InvestigationState:
+
+    risk_assessment = state.get("risk_assessment", [])
+
+    response = await groq_llm.ainvoke([
+        SystemMessage(content=SUMMARIZE_RISK_ASSESSMENT_PROMPT),
+        HumanMessage(
+            content=f"""
+Here is the complete risk assessment data:
+
+{risk_assessment}
+
+Analyze the entire dataset and generate the final
+context-aware risk assessment summary.
+"""
+        )
+    ])
+
+    return {
+        "risk_assessment_summary": response.content
+    }
+
+SUMMARIZE_CLAIM_ASSESSMENT_PROMPT = """
+You are a senior insurance claim assessment analyst.
+
+Your task is to analyze the COMPLETE claim assessment data provided to you
+and generate ONE detailed, context-aware summary.
+
+The input contains multiple claim assessment objects. Each object may contain:
+
+- claim_id
+- claim_text
+- verdict
+- confidence
+- reason
+- supporting_evidence_count
+- contradicting_evidence_count
+
+IMPORTANT:
+You must carefully analyze all the provided information, but the final
+summary must be written in VERY SIMPLE, CLEAR, EVERYDAY ENGLISH.
+
+Imagine you are explaining the claim assessment results to someone who has
+no knowledge of insurance, claim assessment, or technical terms.
+
+LANGUAGE AND WRITING RULES:
+
+1. Use very simple English.
+2. Use short, clear, and easy-to-understand sentences.
+3. Avoid complicated insurance, legal, technical, or statistical words
+   whenever possible.
+4. If a difficult word is necessary, explain it immediately using simple
+   words.
+5. Do not use complicated language just to sound professional.
+6. Clearly explain WHAT was found and WHY it was found.
+7. Explain confidence in simple terms.
+8. Explain supporting and contradicting evidence in simple terms.
+9. Do not use unnecessary jargon.
+10. The summary should sound like a knowledgeable person explaining the
+    results clearly to a normal person.
+11. Keep the analysis detailed, but make every sentence easy to understand.
+12. Do not use childish language. Keep the explanation simple but
+    professional.
+
+ANALYSIS INSTRUCTIONS:
+
+1. Analyze EVERY claim assessment object.
+2. Consider EVERY field of EVERY claim assessment object.
+3. Do not analyze claims completely in isolation. Compare and connect the
+   findings across all claims.
+4. Carefully understand the verdict of each claim.
+5. Understand why each verdict was given by reading its reason.
+6. Consider the confidence score when deciding how strong or uncertain
+   a finding is.
+7. Carefully compare supporting evidence and contradicting evidence.
+8. Identify claims where the evidence strongly supports the verdict.
+9. Identify claims where the evidence is weak or uncertain.
+10. Identify claims where there is a large amount of contradicting evidence.
+11. Identify common patterns across multiple claims.
+12. Identify whether multiple claims point toward a similar conclusion.
+13. Identify important differences between claims.
+14. Check whether the verdict, confidence, reason, and evidence counts
+    make sense together.
+15. Highlight cases where the verdict and available evidence appear
+    inconsistent.
+16. Clearly distinguish between strong findings and uncertain findings.
+17. Do not assume that a high confidence score automatically means the
+    claim is true. Use the reason and evidence to understand the finding.
+18. Do not assume that a low confidence score means the claim is false.
+    Explain what makes the finding uncertain.
+19. Do not invent facts or information that is not present in the data.
+20. Do not simply repeat every claim object.
+21. Do not produce a separate long explanation for every claim.
+22. Combine the information from all claims into one meaningful,
+    context-aware summary.
+23. Focus on the most important findings and avoid unnecessary repetition.
+
+The final summary should clearly explain:
+
+- What the overall claim assessment looks like.
+- The main findings across all claims.
+- The important patterns found across the claims.
+- How the verdicts are distributed.
+- Which claims have strong confidence and why.
+- Which claims have weak confidence and why.
+- How much supporting evidence exists.
+- How much contradicting evidence exists.
+- Whether the evidence generally supports the verdicts.
+- Any claims where the evidence and verdict do not seem to match.
+- Any important concerns or uncertain findings.
+- The overall conclusion based ONLY on the provided information.
+
+SIMPLE LANGUAGE EXAMPLES:
+
+Instead of:
+
+"The evidence demonstrates substantial support for the claim's
+affirmative verdict."
+
+Say:
+
+"Most of the available evidence supports the claim."
+
+Instead of:
+
+"The claim has a low confidence score due to conflicting evidence."
+
+Say:
+
+"The result is not very certain because some of the evidence disagrees
+with the claim."
+
+Instead of:
+
+"The dataset exhibits a significant prevalence of contradictory
+evidence."
+
+Say:
+
+"Several claims have evidence that goes against them."
+
+Instead of:
+
+"The assessment indicates a strong correlation between the verdict and
+supporting evidence."
+
+Say:
+
+"The claims with stronger supporting evidence usually have a clearer
+verdict."
+
+Do NOT copy these examples into the final answer. They only show the
+writing style you should use.
+
+IMPORTANT FINAL OUTPUT RULE:
+
+Think deeply about ALL claims and ALL their fields before writing the
+summary.
+
+The reasoning can be complex, but the FINAL SUMMARY must be simple enough
+that a person with no technical or insurance knowledge can understand it
+easily.
+
+Do NOT leave out important findings just because you are using simple
+language.
+
+Return ONLY the detailed summary as plain text.
+"""
+
+async def summarize_claim_assessment(state:InvestigationState)->InvestigationState:
+
+    claim_assessment = state.get("claim_assessment", [])
+
+    # Give the LLM the complete claim assessment.
+    # Every object and every field is preserved.
+    response = await groq_llm.ainvoke([
+        SystemMessage(content=SUMMARIZE_CLAIM_ASSESSMENT_PROMPT),
+        HumanMessage(
+            content=f"""
+Here is the complete claim assessment data:
+
+{claim_assessment}
+
+Analyze the entire dataset and generate the final
+context-aware claim assessment summary.
+"""
+        )
+    ])
+
+    return {
+        "claim_assessment_summary": response.content
+    }
+
+def summarize_transcript(state:InvestigationState)->InvestigationState:
+    return state 
 graph = StateGraph(InvestigationState)
 graph.add_node("classify_input", classify_input)
 graph.add_node("extract_claims", extract_claims)
 graph.add_node("google_fact_checks_worker", google_fact_checks_worker)
-# graph.add_node("hive_text_moderation", hive_text_moderation)
 graph.add_node("search_web_evidence_worker", search_web_evidence_worker)
 graph.add_node("evidence_analysis", evidence_analysis)
 graph.add_node("web_evidence_analysis", web_evidence_analysis)
 graph.add_node("finding_eveidence", finding_eveidence)
 graph.add_node("claim_assesment", claim_assessment)
 graph.add_node("Risk_assesment", risk_assessment)
-graph.add_node("Calc_overall_risk_score_and_confidence", Calc_overall_risk_score_and_confidence)
+graph.add_node("summarize_claim_assessment", summarize_claim_assessment)
+graph.add_node("summarize_risk_assessment", summarize_risk_assessment)
+# graph.add_node("Risk_assesment", risk_assessment)
+graph.add_node("handling_input_type_url", handling_input_type_url)
+graph.add_node("input_type_is_text", input_type_is_text)
+graph.add_node("input_type_is_url", input_type_is_url)
+graph.add_node("summarize_transcript", summarize_transcript)
 graph.add_node("hive_assesment_analysis_worker", hive_assesment_analysis_worker)
 
 
 graph.add_edge(START, "classify_input")
-graph.add_edge("classify_input","extract_claims")
+# graph.add_edge("classify_input","extract_claims")
+graph.add_conditional_edges("classify_input",input_router)
+graph.add_edge("input_type_is_text","extract_claims")
+graph.add_edge("input_type_is_url","handling_input_type_url")
+graph.add_edge("handling_input_type_url","summarize_transcript")
+graph.add_edge("summarize_transcript","extract_claims")
 graph.add_edge("extract_claims", "finding_eveidence")
 # graph.add_edge("finding_eveidence","hive_text_moderation")
 graph.add_conditional_edges("finding_eveidence",fan_out_evidence_fact,["google_fact_checks_worker"])
@@ -1403,13 +1908,14 @@ graph.add_edge("evidence_analysis","claim_assesment")
 # graph.add_edge("hive_assesment_analysis_worker","Risk_assesment")
 graph.add_conditional_edges("claim_assesment",hive_assesment_fanout,["hive_assesment_analysis_worker"])
 graph.add_edge("hive_assesment_analysis_worker","Risk_assesment")
-graph.add_edge("Risk_assesment","Calc_overall_risk_score_and_confidence")
-graph.add_edge("Calc_overall_risk_score_and_confidence",END)
+graph.add_edge("Risk_assesment","summarize_claim_assessment")
+graph.add_edge("summarize_claim_assessment","summarize_risk_assessment")
+graph.add_edge("summarize_risk_assessment",END)
 
 # graph.add_conditional_edges("orchestrator",fan_out_tasks, ["worker"]
 # for now using InMemorySaver
 checkpointer=InMemorySaver()
-AGENT=graph.compile(checkpointer=checkpointer)
+AGENT=graph.compile()
 
 
 

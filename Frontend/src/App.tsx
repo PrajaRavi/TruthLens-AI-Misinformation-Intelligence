@@ -26,7 +26,7 @@ import { formatDate } from "./lib/utils";
 import { KeyObject } from "crypto";
 import { FactCheckReport } from "./components/DataTable2";
 
-function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
@@ -65,7 +65,7 @@ export function App() {
   let [GlobalLoadingState, setGlobalLoadingState] = useState<boolean>(false);
 
   let [RecentAnalysis, setRecentAnalysis] =
-    useState<FactCheckReport[]>(sampleFactCheckData); //this  is the recent analysis
+    useState<FactCheckReport[]>([]); //this  is the recent analysis
 
   let [dashboardStats, setdashboardStats] = useState<DashboardStats>({
     averageConfidence: 0,

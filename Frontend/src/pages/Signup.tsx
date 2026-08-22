@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import AnalysisResultDemo from "@/components/AnalysisResult2";
 import { AreaChart } from "@/components/charts/AreaChart1";
 import { DashBoardTableMe, FactCheckReport } from "@/components/DataTable2";
+import AnalysisDashboard from "./AnalysisResultv2";
+import { DashboardLayout } from "@/App";
 export interface DataPoint {
   x: string;
   y: number;
@@ -256,70 +258,73 @@ toast({
 
   return (
     // <DashBoardTableMe data={sampleFactCheckData} />
-    <AuthShell
-      title="Create your account"
-      subtitle="Start analyzing content and verifying claims."
-      footer={
-        <>
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Sign in
-          </Link>
-        </>
-      }
-    >
-      <div className="mb-4 flex justify-end">
-        <ThemeToggle />
-      </div>
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Full name</Label>
-          <div className="relative">
-            <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <Input name="name" id="name" onChange={handleChange} value={form.name} required placeholder="Jane Doe" className="pl-9" />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <Input
-              name="email"
-              id="email"
-              value={form.email}
-              onChange={handleChange}
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="pl-9"
-            />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <Input
-              id="password"
-              name="password"
-              onChange={handleChange}
-              value={form.password}
+    <DashboardLayout>
+    <AnalysisDashboard/>
+    </DashboardLayout>
+    // <AuthShell
+    //   title="Create your account"
+    //   subtitle="Start analyzing content and verifying claims."
+    //   footer={
+    //     <>
+    //       Already have an account?{" "}
+    //       <Link href="/login" className="font-medium text-primary hover:underline">
+    //         Sign in
+    //       </Link>
+    //     </>
+    //   }
+    // >
+    //   <div className="mb-4 flex justify-end">
+    //     <ThemeToggle />
+    //   </div>
+    //   <form onSubmit={submit} className="space-y-4">
+    //     <div className="space-y-1.5">
+    //       <Label htmlFor="name">Full name</Label>
+    //       <div className="relative">
+    //         <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+    //         <Input name="name" id="name" onChange={handleChange} value={form.name} required placeholder="Jane Doe" className="pl-9" />
+    //       </div>
+    //     </div>
+    //     <div className="space-y-1.5">
+    //       <Label htmlFor="email">Email</Label>
+    //       <div className="relative">
+    //         <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+    //         <Input
+    //           name="email"
+    //           id="email"
+    //           value={form.email}
+    //           onChange={handleChange}
+    //           type="email"
+    //           required
+    //           placeholder="you@example.com"
+    //           className="pl-9"
+    //         />
+    //       </div>
+    //     </div>
+    //     <div className="space-y-1.5">
+    //       <Label htmlFor="password">Password</Label>
+    //       <div className="relative">
+    //         <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+    //         <Input
+    //           id="password"
+    //           name="password"
+    //           onChange={handleChange}
+    //           value={form.password}
 
-              type="password"
-              required
-              placeholder="Create a password"
-              className="pl-9"
-            />
-          </div>
-        </div>
-        <Button type="submit" className="w-full" loading={loading}>
-          {!loading && <UserPlus className="h-4 w-4" />}
-          Create account
-        </Button>
-        <p className="text-center text-xs text-muted-2">
-          By continuing you agree to the demo terms and privacy policy.
-        </p>
-      </form>
-    </AuthShell>
+    //           type="password"
+    //           required
+    //           placeholder="Create a password"
+    //           className="pl-9"
+    //         />
+    //       </div>
+    //     </div>
+    //     <Button type="submit" className="w-full" loading={loading}>
+    //       {!loading && <UserPlus className="h-4 w-4" />}
+    //       Create account
+    //     </Button>
+    //     <p className="text-center text-xs text-muted-2">
+    //       By continuing you agree to the demo terms and privacy policy.
+    //     </p>
+    //   </form>
+    // </AuthShell>
   );
 }

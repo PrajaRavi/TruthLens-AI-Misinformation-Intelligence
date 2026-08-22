@@ -11,7 +11,6 @@ from langchain_ollama import OllamaEmbeddings
 from fastapi.responses import JSONResponse
 from fastapi import Query,status
 from imagekitio import ImageKit
-from utils.vector_store_manager import update_vector_store
 from LLM.tools import Validate_input
 
 from LLM.chatboat import AGENT

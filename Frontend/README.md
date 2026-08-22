@@ -1,3 +1,5 @@
+
+#### now lets talk about problem of too many claims since now i am analysing whole webpage,a yt video[max 5 minute] so their will be too many claims because i just performed this operation on 2000 char research text and i got approx 30 claims now as in case of input_type text where input was small so in dashboard i was showing claims_assesment,risk_assessment of each claim but now this will be not good from user perspective because user can get confuse by see too many claims_assessment,risk_assessment which is not a good user experience
 # TruthLens AI — Vite React edition
 
 This is a standalone Vite + React + Tailwind CSS conversion of the supplied Next.js dashboard. It preserves every dashboard, analysis, history, sources, reports, settings, and authentication screen, along with the shared components, theme switching, mock data, uploads, and interactive demo flows.
