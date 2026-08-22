@@ -1121,9 +1121,9 @@ Remember:
             "contradicting_evidence_count": len(contradicting)
         })
 
-    state["claim_assessment"] = assessments
+    return {"claim_assessment":assessments}
 
-    return state
+
 
 
 
