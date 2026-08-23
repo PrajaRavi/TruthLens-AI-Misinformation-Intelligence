@@ -15,6 +15,7 @@ import {
   FileText,
   Link2,
   ExternalLink,
+  PersonStanding,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -25,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
-import { UrlType } from "./Analyze";
+import { UrlType, WebPageDataType, YtDataType } from "./Analyze";
 import MarkdownRenderer from "@/utils/MDRenderer";
 
 // ============================================================
@@ -162,6 +163,11 @@ export interface AnalysisDashboardProps {
   claim_summary:string;
   risk_summary:string;
   urls:UrlType[];
+  title:string;
+  input_type:string;
+  WebPageData?:WebPageDataType;
+  YtData?:YtDataType;
+
 }
 
 // ============================================================
@@ -813,7 +819,11 @@ export function AnalysisDashboard({
   claim_assessment,
   claim_summary,
   risk_summary,
-  urls
+  urls,
+  title,
+  input_type,
+  YtData,
+  WebPageData
 }: AnalysisDashboardProps) {
 
   const ITEMS_PER_PAGE = 2;
@@ -990,6 +1000,28 @@ export function AnalysisDashboard({
       (claimPage - 1) * ITEMS_PER_PAGE,
       claimPage * ITEMS_PER_PAGE
     );
+  const UserContent=()=>{
+    if(input_type=="text"){
+return<>
+    
+
+ <SummaryCard
+          title="You asked"
+          icon={PersonStanding}
+          summary={title}
+          />
+          </>
+
+    }
+    else if(input_type=="url"){
+<div className="min-w-0 grid-cols-1 max-w-">
+      <UrlPreview  key={`htijfi-120`} url={"https://raviporton.onrender.com"} />
+                                    
+    </div>
+    }
+    
+  }
+
 
   // ==========================================================
   // EMPTY STATE
@@ -1041,9 +1073,8 @@ export function AnalysisDashboard({
       {/* ======================================================
           FINAL RISK ASSESSMENT
       ====================================================== */}
-
       <section className="space-y-5">
-
+        <UserContent/>
         <div>
           <h2 className="text-lg font-semibold text-foreground">
             Final Risk Assessment

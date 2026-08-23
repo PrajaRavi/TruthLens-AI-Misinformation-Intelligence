@@ -1,3 +1,5 @@
+
+// https://i.ytimg.com/vi/O4LqCxB5XZc/maxresdefault.jpg
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "@/router";
 import {
@@ -55,6 +57,16 @@ const resultByType: Record<InputType, Analysis> = {
   video: analyses[2],
 };
 
+export interface YtDataType{
+  video_url:string;
+  thumbnail:string;
+  title:string;
+}
+
+export interface WebPageDataType{
+  webpage_url:string;
+  title:string;
+}
 export function AnalyzeClient() {
   const {RecentAnalysis,GetuserSignal}=useUser();
   const searchParams = useSearchParams();
@@ -88,6 +100,11 @@ export function AnalyzeClient() {
   const [imageFile, setImageFile] = useState<UploadedFile | null>(null);
   const [audioFile, setAudioFile] = useState<UploadedFile | null>(null);
   const [videoFile, setVideoFile] = useState<UploadedFile | null>(null);
+  let [Title,setTitle]=useState<string>("")
+
+  let [YtData,setYtData]=useState<YtDataType>({thumbnail:"",title:"",video_url:""})
+  let [WebPageData,setWebPageData]=useState<WebPageDataType>({title:"",webpage_url:""})
+
   const [urlPreview, setUrlPreview] = useState(false);
   let [InputValidationLoading, setInputValidationLoading] =
     useState<boolean>(false);
@@ -100,6 +117,8 @@ export function AnalyzeClient() {
       // if (found) {
         // setResult(found);
         setStage("results");
+        setTitle(found?.title)
+        
         setClaimAssessment(found?.claims)
         setClaimSummary(found?.claim_summary)
         setRiskAssesment(found?.risk_assessment)
@@ -820,10 +839,18 @@ saveRiskAssessment([
           return {...item,supporting_evidence,contradicting_evidence}
         })
 
+        if(response.input_type=="youtube"){
+          setYtData({thumbnail:response.yt_thumbnail,title:response.webpage_title,video_url:response.input_url})
+        }
+        if(response.input_type=="webpage"){
+          setWebPageData({title:response.webpage_title,webpage_url:response.input_url})
+
+        }
         setClaimAssessment(filterClaim)
         setClaimSummary(response.claim_assessment_summary)
         setRiskSummary(response.risk_assessment_summary)
         setRiskAssesment(response.risk_assessment)
+        setTitle(text)
         let urlList1=GetURlList(response.web_evidence)
         let urlList2=GetURlList(response.evidence)
         setUrls([...urlList1,...urlList2])
@@ -903,10 +930,10 @@ saveRiskAssessment([
   if (stage === "processing") {
     return (
       <div className="space-y-6">
-        <PageHeader
+        {/* <PageHeader
           title="Analyze Content"
           description="Submit content to assess misinformation risk and verify its claims."
-        />
+        /> */}
         <AnalysisProgress steps={steps} />
       </div>
     );
@@ -925,18 +952,18 @@ saveRiskAssessment([
             </Button>
           }
         /> */}
-        <AnalysisDashboard claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
+        <AnalysisDashboard input_type={tab} title={Title} claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      {/* <PageHeader
         title="Analyze Content"
         
         description="Submit content to assess misinformation risk and verify its claims."
-      />
+      /> */}
 
       <Tabs
         items={tabItems}
@@ -1170,14 +1197,14 @@ saveRiskAssessment([
                 placeholder="Paste an article, webpage, or social media URL"
                 className="flex-1"
               />
-              <Button
+              {/* <Button
                 onClick={() => {
                   if (url.trim().length > 5) setUrlPreview(true);
                 }}
                 variant="outline"
               >
                 Fetch Preview
-              </Button>
+              </Button> */}
             </div>
 
             {urlPreview && (

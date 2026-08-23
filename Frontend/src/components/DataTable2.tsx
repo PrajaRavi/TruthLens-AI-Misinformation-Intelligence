@@ -68,7 +68,7 @@ export function DashBoardTableMe({ data }: { data: FactCheckReport[] }) {
       header: "Analysis Report",
       render: (row) => (
         <div>
-          <div className="font-semibold text-foreground">{row.title}</div>
+          <div className="font-semibold text-foreground">{String(row.title).slice(0, 25) + "..."}</div>
           <div className="text-xs text-muted flex gap-2 mt-0.5">
             <span>ID: {row.id}</span>
           </div>
