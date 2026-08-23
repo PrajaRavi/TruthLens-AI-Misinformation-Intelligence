@@ -12,6 +12,9 @@ import {
   ChevronRight,
   ThumbsUp,
   ThumbsDown,
+  FileText,
+  Link2,
+  ExternalLink,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -22,6 +25,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
+import { UrlType } from "./Analyze";
+import MarkdownRenderer from "@/utils/MDRenderer";
 
 // ============================================================
 // TYPES
@@ -88,7 +93,8 @@ function EvidenceGroup({
   const Icon = positive ? ThumbsUp : ThumbsDown;
 
   return (
-    <section className={`rounded-xl border ${background}`}>
+    <>
+    <section className={`rounded-xl  ${background}`}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -144,12 +150,18 @@ function EvidenceGroup({
         </div>
       )}
     </section>
+    
+    </>
+
   );
 }
 
 export interface AnalysisDashboardProps {
   risk_assessments: RiskAssessment[];
   claim_assessment: ClaimAssessment[];
+  claim_summary:string;
+  risk_summary:string;
+  urls:UrlType[];
 }
 
 // ============================================================
@@ -302,16 +314,18 @@ function StatCard({
   value,
   description,
   icon: Icon,
+  bg
 }: {
   title: string;
   value: string | number;
   description?: string;
   icon?: React.ComponentType<{ className?: string }>;
+  bg?:string;
 }) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start  justify-between gap-4">
+    <Card className={bg}>
+      <CardContent className="pt-6 ">
+        <div className="flex items-start   justify-between gap-4">
           <div>
             <p className="text-xs font-medium text-muted">
               {title}
@@ -329,7 +343,7 @@ function StatCard({
           </div>
 
           {Icon && (
-            <div className="rounded-lg bg-surface-2 p-2">
+            <div className={`rounded-lg ${bg}  p-2`}>
               <Icon className="h-5 w-5 text-muted" />
             </div>
           )}
@@ -368,7 +382,7 @@ function SummaryCard({
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-muted">
-              {summary}
+              <MarkdownRenderer content={summary}/>
             </p>
           </div>
         </div>
@@ -383,8 +397,9 @@ function SummaryCard({
 
 function RiskAssessmentItem({
   assessment,
+  
 }: {
-  assessment: RiskAssessment;
+  assessment: RiskAssessment
 }) {
   const [open, setOpen] = useState(false);
 
@@ -510,11 +525,49 @@ function RiskAssessmentItem({
 // ============================================================
 // CLAIM ASSESSMENT ITEM
 // ============================================================
+function UrlPreview({ url }: { url: string }) {
+  let host = url;
+  let title = "Referenced source";
+  try {
+    const parsed = new URL(url);
+    host = parsed.hostname.replace("www.", "");
+    title =
+      parsed.pathname.split("/").filter(Boolean).pop()?.replace("-", " ") ||
+      host;
+  } catch {
+    /* preserve the API value if it is not a valid URL */
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="group block rounded-xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Link2 className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 text-xs text-muted">
+            <span className="truncate">{host}</span>
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          </span>
+          <span className="mt-1 block capitalize text-sm font-semibold text-foreground">
+            {title}
+          </span>
+          <span className="mt-1 block truncate text-xs text-muted">{url}</span>
+        </span>
+      </div>
+    </a>
+  );
+}
 
 function ClaimAssessmentItem({
   assessment,
+  urls,
 }: {
-  assessment: ClaimAssessment;
+  assessment: ClaimAssessment;urls:UrlType[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -632,6 +685,8 @@ function ClaimAssessmentItem({
                               items={assessment.supporting_evidence}
                               positive
                             />
+                              
+    
                             <EvidenceGroup
                               title="Contradicting evidence"
                               items={assessment.contradicting_evidence}
@@ -639,6 +694,20 @@ function ClaimAssessmentItem({
                             />
                           </div>
                         </CardContent>
+                        <section className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-5 w-5 text-primary" />
+                                  <h2 className="text-lg font-semibold">Referenced URLs</h2>
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  {urls.map((url, index) => (
+                                    <div className={url.claim_id==assessment.claim_id?"block":"hidden"}>
+
+                                    <UrlPreview  key={`${url}-${index}`} url={url.url} />
+                                    </div>
+                                  ))}
+                                </div>
+                              </section>
             {/* <div className="grid gap-3 sm:grid-cols-2">
 
               <div className="rounded-xl border border-risk-low/20 bg-risk-low/5 p-4">
@@ -742,6 +811,9 @@ function Pagination({
 export function AnalysisDashboard({
   risk_assessments,
   claim_assessment,
+  claim_summary,
+  risk_summary,
+  urls
 }: AnalysisDashboardProps) {
 
   const ITEMS_PER_PAGE = 2;
@@ -988,9 +1060,7 @@ export function AnalysisDashboard({
         <SummaryCard
           title="Context-Aware Risk Summary"
           icon={AlertTriangle}
-          summary={
-            "The analyzed content contains multiple claims with different levels of potential risk. The overall assessment considers the nature of each claim, the factual assessment, available evidence, and potential harm. The summary is generated from the individual risk assessments rather than simply combining their reasons."
-          }
+          summary={risk_summary}
         />
 
         {/* RISK LEVEL COUNTS */}
@@ -1002,6 +1072,8 @@ export function AnalysisDashboard({
             value={riskStats.critical}
             description="Claims classified as critical"
             icon={AlertTriangle}
+            bg={"bg-risk-critical/20"}
+            
             
           />
 
@@ -1010,6 +1082,8 @@ export function AnalysisDashboard({
             value={riskStats.high}
             description="Claims classified as high risk"
             icon={ShieldAlert}
+            bg={"bg-risk-high/20"}
+
           />
 
           <StatCard
@@ -1017,6 +1091,8 @@ export function AnalysisDashboard({
             value={riskStats.moderate}
             description="Claims classified as moderate risk"
             icon={Info}
+            bg={"bg-risk-moderate/20"}
+
           />
 
           <StatCard
@@ -1024,6 +1100,8 @@ export function AnalysisDashboard({
             value={riskStats.low}
             description="Claims classified as low risk"
             icon={ShieldCheck}
+            bg={"bg-risk-low/20"}
+
           />
 
         </div>
@@ -1084,6 +1162,7 @@ export function AnalysisDashboard({
                 <RiskAssessmentItem
                   key={`${assessment.claim_id}-${index}`}
                   assessment={assessment}
+                 
                 />
               )
             )}
@@ -1134,9 +1213,7 @@ export function AnalysisDashboard({
         <SummaryCard
           title="Context-Aware Claims Summary"
           icon={CheckCircle2}
-          summary={
-            "The analysis identified claims with different factual verdicts and confidence levels. Some claims are strongly supported or contradicted by evidence, while others remain partially true, misleading, or unverified because the available evidence is insufficient to establish a definitive conclusion."
-          }
+          summary={claim_summary}
         />
 
         {/* CONFIDENCE COUNTS */}
@@ -1148,6 +1225,7 @@ export function AnalysisDashboard({
             value={claimStats.highConfidence}
             description="80–100% confidence"
             icon={CheckCircle2}
+            bg={"bg-risk-high/20"}
           />
 
           <StatCard
@@ -1155,6 +1233,7 @@ export function AnalysisDashboard({
             value={claimStats.moderateConfidence}
             description="30–79% confidence"
             icon={Info}
+            bg={"bg-risk-moderate/20"}
           />
 
           <StatCard
@@ -1162,6 +1241,7 @@ export function AnalysisDashboard({
             value={claimStats.lowConfidence}
             description="1–29% confidence"
             icon={FileWarning}
+            bg={"bg-risk-low/20"}
           />
 
         </div>
@@ -1252,6 +1332,8 @@ export function AnalysisDashboard({
                 <ClaimAssessmentItem
                   key={`${assessment.claim_id}-${index}`}
                   assessment={assessment}
+                  urls={urls}
+                  
                 />
               )
             )}
@@ -1407,6 +1489,9 @@ export default function AnalysisDashboardDemo() {
     <AnalysisDashboard
       risk_assessments={demoRiskAssessments}
       claim_assessment={demoClaimAssessments}
+      urls={[{'claim_id':'1',url:"hello"}]}
+      claim_summary={"jdifj"}
+      risk_summary="jdifjdifj"
     />
   );
 }

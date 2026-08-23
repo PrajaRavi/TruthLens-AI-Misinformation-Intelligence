@@ -1558,122 +1558,51 @@ overall =
 """
 
 SUMMARIZE_RISK_ASSESSMENT_PROMPT = """
-You are a risk assessment analyst specializing in insurance claims and
-content safety.
-
-Your task is to analyze the COMPLETE risk assessment data provided to you
-and generate ONE detailed, context-aware risk summary.
-
-The input contains multiple risk assessment objects. Each object contains:
-
-- claim_id
-- claim_text
-- risk_score
-- risk_level
-- reason
-
-The `reason` explains why the particular risk_score and risk_level were
-assigned and whether the claim content is harmful or not.
+You are an expert misinformation claim assessment analyst.
 
 IMPORTANT:
-You must understand and analyze the data carefully, but explain the final
-result in VERY SIMPLE, CLEAR, EVERYDAY ENGLISH.
+Use ONLY the `reason` field to create the summary. Do not use or infer
+information directly from claim_id, claim_text, verdict, confidence, or
+evidence counts. The reason field already contains the important explanation
+about each claim.
 
-Imagine that you are explaining the result to someone who has no technical
-knowledge and has difficulty understanding complicated words.
+Read the reason of EVERY claim carefully. Compare the reasons across all
+claims and identify the most important overall findings, common patterns,
+differences, repeated issues, and important concerns.
 
-LANGUAGE AND WRITING RULES:
+Write ONE concise but detailed, context-aware summary.
 
-1. Use very simple English.
-2. Use short and clear sentences.
-3. Avoid technical, legal, medical, or complicated words whenever possible.
-4. If a difficult word is necessary, immediately explain it using simple
-   words.
-5. Do not use complicated phrases just to sound professional.
-6. Explain WHAT the risk is and WHY it is considered risky in simple words.
-7. Explain risk scores and risk levels in a way that is easy to understand.
-8. Do not use unnecessary jargon.
-9. Do not make the summary sound like a technical report.
-10. The summary should feel like a knowledgeable person calmly explaining
-    the situation to another person.
-11. Keep the summary detailed, but make every sentence easy to understand.
-12. Do not use childish language. The language should be simple but still
-    professional and meaningful.
+LANGUAGE RULE:
+Use extremely simple, plain, everyday English. Write as if you are explaining
+the result to a 5-year-old child. Use short sentences and very common words.
+Avoid technical, legal, insurance, academic, or complicated words.
+If a difficult word is absolutely necessary, explain it using very simple words.
+Do not use fancy words just to sound professional.
 
-ANALYSIS INSTRUCTIONS:
+IMPORTANT INFORMATION RULE:
+If the assessment contains the name of a person, place, event, organization,
+company, product, group, or any other important named thing that helps the user
+understand the risk or claim, KEEP that name in the summary.
+Do not remove or replace useful names with vague words such as "a person",
+"an organization", or "an event" when the actual name is available.
+Only include names that are relevant to the main findings. Do not add names
+that are not present in the provided data.
 
-1. Analyze EVERY risk assessment object.
-2. Consider EVERY field of every risk assessment object.
-3. Do not analyze the claims completely in isolation. Compare and connect
-   the risk findings across all claims.
-4. Understand why each risk_score was assigned.
-5. Understand why each risk_level was assigned.
-6. Carefully read the reason for each claim to understand whether the
-   content is harmful or not.
-7. Identify claims with particularly high risk.
-8. Identify claims with particularly low risk.
-9. Identify common risk patterns across multiple claims.
-10. Identify whether multiple claims show similar harmful or unsafe
-    content.
-11. Identify important differences between the risks of different claims.
-12. Check whether the risk_score, risk_level, and reason make sense
-    together.
-13. Point out important cases where they do not seem to match.
-14. Do not assume that a high risk score automatically means the content
-    is harmful. Use the provided reason and other information to understand
-    why the score was given.
-15. Do not assume that a low risk score automatically means everything is
-    safe. Consider the reason and the complete context.
-16. Do not invent facts or information that is not present in the data.
-17. Do not simply repeat every risk assessment object.
-18. Combine the information from all claims into one meaningful summary.
-19. Focus on the most important findings rather than repeating the same
-    information multiple times.
-
-The final summary should clearly explain:
-
-- What the overall risk situation looks like.
-- Which claims have the highest risks and why.
-- Which claims have the lowest risks and why.
-- What the different risk scores mean in simple words.
-- What the different risk levels mean in simple words.
-- Whether the claims contain harmful or non-harmful content.
-- Any common risk patterns found across the claims.
-- Any important differences between claims.
-- Any unusual or concerning findings.
-- Any cases where the score, risk level, and reason do not seem to agree.
-- The final overall risk conclusion.
-
-IMPORTANT FINAL OUTPUT RULE:
-
-Write the final summary as if you are explaining the results to a normal
-person who does not understand risk assessment.
-
-For example, instead of:
-
-"The dataset demonstrates a significant concentration of high-severity
-risk indicators."
-
-Say:
-
-"Several claims have a high risk level. This is mainly because their
-reasons show content or situations that may cause harm."
-
-Instead of:
-
-"The risk assessment reveals inconsistent scoring across claims."
-
-Say:
-
-"Some claims have a risk score that does not seem to fully match their
-risk level or the reason given. These claims may need another look."
-
-Do NOT copy these examples into the final answer. They only show the style
-you should follow.
-
-Return ONLY the detailed risk assessment summary as plain text.
+IMPORTANT OUTPUT RULES:
+- Maximum 5–6 lines.
+- Keep it concise but meaningful.
+- Include the most important information from ALL claims.
+- Explain the overall risk and important high/low risks.
+- Mention important harmful or non-harmful content patterns.
+- Keep useful names of people, places, events, organizations, or other
+  important things when they help explain the result.
+- Mention important concerns or mismatches.
+- Do not simply list the claims.
+- Do not repeat the same information.
+- Do not invent any information.
+- Do not leave out important findings just because the summary is short.
+- Return ONLY the final summary as plain text.
 """
-
 async def summarize_risk_assessment(state:InvestigationState)->InvestigationState:
 
     risk_assessment = state.get("risk_assessment", [])
@@ -1697,152 +1626,50 @@ context-aware risk assessment summary.
     }
 
 SUMMARIZE_CLAIM_ASSESSMENT_PROMPT = """
-You are a senior insurance claim assessment analyst.
+You are an expert misinformation claim assessment analyst.
 
-Your task is to analyze the COMPLETE claim assessment data provided to you
-and generate ONE detailed, context-aware summary.
-
-The input contains multiple claim assessment objects. Each object may contain:
-
-- claim_id
-- claim_text
-- verdict
-- confidence
-- reason
-- supporting_evidence_count
-- contradicting_evidence_count
+Analyze the COMPLETE claim assessment data containing multiple claim objects.
+Each object contains: claim_id, claim_text, verdict, confidence, reason,
+supporting_evidence_count, and contradicting_evidence_count.
 
 IMPORTANT:
-You must carefully analyze all the provided information, but the final
-summary must be written in VERY SIMPLE, CLEAR, EVERYDAY ENGLISH.
+Use ONLY the `reason` field to create the summary. Do not use or infer
+information directly from claim_id, claim_text, verdict, confidence, or
+evidence counts. The reason field already contains the important explanation
+about each claim.
 
-Imagine you are explaining the claim assessment results to someone who has
-no knowledge of insurance, claim assessment, or technical terms.
+Read the reason of EVERY claim carefully. Compare the reasons across all
+claims and identify the most important overall findings, common patterns,
+differences, repeated issues, and important concerns.
 
-LANGUAGE AND WRITING RULES:
+Write ONE concise but detailed, context-aware summary.
 
-1. Use very simple English.
-2. Use short, clear, and easy-to-understand sentences.
-3. Avoid complicated insurance, legal, technical, or statistical words
-   whenever possible.
-4. If a difficult word is necessary, explain it immediately using simple
-   words.
-5. Do not use complicated language just to sound professional.
-6. Clearly explain WHAT was found and WHY it was found.
-7. Explain confidence in simple terms.
-8. Explain supporting and contradicting evidence in simple terms.
-9. Do not use unnecessary jargon.
-10. The summary should sound like a knowledgeable person explaining the
-    results clearly to a normal person.
-11. Keep the analysis detailed, but make every sentence easy to understand.
-12. Do not use childish language. Keep the explanation simple but
-    professional.
+LANGUAGE RULE:
+Use VERY SIMPLE, PLAIN, EVERYDAY ENGLISH. Write as if you are explaining
+the result to a 5-year-old child. Use short sentences and very common words.
+Avoid technical, academic, legal, or complicated words.
+If a difficult word is necessary, explain it using simple words.
+Do not use fancy language.
 
-ANALYSIS INSTRUCTIONS:
-
-1. Analyze EVERY claim assessment object.
-2. Consider EVERY field of EVERY claim assessment object.
-3. Do not analyze claims completely in isolation. Compare and connect the
-   findings across all claims.
-4. Carefully understand the verdict of each claim.
-5. Understand why each verdict was given by reading its reason.
-6. Consider the confidence score when deciding how strong or uncertain
-   a finding is.
-7. Carefully compare supporting evidence and contradicting evidence.
-8. Identify claims where the evidence strongly supports the verdict.
-9. Identify claims where the evidence is weak or uncertain.
-10. Identify claims where there is a large amount of contradicting evidence.
-11. Identify common patterns across multiple claims.
-12. Identify whether multiple claims point toward a similar conclusion.
-13. Identify important differences between claims.
-14. Check whether the verdict, confidence, reason, and evidence counts
-    make sense together.
-15. Highlight cases where the verdict and available evidence appear
-    inconsistent.
-16. Clearly distinguish between strong findings and uncertain findings.
-17. Do not assume that a high confidence score automatically means the
-    claim is true. Use the reason and evidence to understand the finding.
-18. Do not assume that a low confidence score means the claim is false.
-    Explain what makes the finding uncertain.
-19. Do not invent facts or information that is not present in the data.
-20. Do not simply repeat every claim object.
-21. Do not produce a separate long explanation for every claim.
-22. Combine the information from all claims into one meaningful,
-    context-aware summary.
-23. Focus on the most important findings and avoid unnecessary repetition.
-
-The final summary should clearly explain:
-
-- What the overall claim assessment looks like.
-- The main findings across all claims.
-- The important patterns found across the claims.
-- How the verdicts are distributed.
-- Which claims have strong confidence and why.
-- Which claims have weak confidence and why.
-- How much supporting evidence exists.
-- How much contradicting evidence exists.
-- Whether the evidence generally supports the verdicts.
-- Any claims where the evidence and verdict do not seem to match.
-- Any important concerns or uncertain findings.
-- The overall conclusion based ONLY on the provided information.
-
-SIMPLE LANGUAGE EXAMPLES:
-
-Instead of:
-
-"The evidence demonstrates substantial support for the claim's
-affirmative verdict."
-
-Say:
-
-"Most of the available evidence supports the claim."
-
-Instead of:
-
-"The claim has a low confidence score due to conflicting evidence."
-
-Say:
-
-"The result is not very certain because some of the evidence disagrees
-with the claim."
-
-Instead of:
-
-"The dataset exhibits a significant prevalence of contradictory
-evidence."
-
-Say:
-
-"Several claims have evidence that goes against them."
-
-Instead of:
-
-"The assessment indicates a strong correlation between the verdict and
-supporting evidence."
-
-Say:
-
-"The claims with stronger supporting evidence usually have a clearer
-verdict."
-
-Do NOT copy these examples into the final answer. They only show the
-writing style you should use.
-
-IMPORTANT FINAL OUTPUT RULE:
-
-Think deeply about ALL claims and ALL their fields before writing the
-summary.
-
-The reasoning can be complex, but the FINAL SUMMARY must be simple enough
-that a person with no technical or insurance knowledge can understand it
-easily.
-
-Do NOT leave out important findings just because you are using simple
-language.
-
-Return ONLY the detailed summary as plain text.
+IMPORTANT OUTPUT RULES:
+- Maximum 5–6 lines.
+- Keep the summary concise but meaningful.
+- Include the most important findings from ALL claim reasons.
+- Focus only on information clearly supported by the `reason` fields.
+- Identify important common patterns and differences across the reasons.
+- If a reason mentions a useful person, place, event, organization, product,
+  or other important name, include that name in the summary when it helps the
+  user understand the result.
+- Include important harmful, false, misleading, safe, or concerning patterns
+  mentioned in the reasons.
+- Do not list every claim separately.
+- Do not repeat the claim objects.
+- Do not invent or assume any information.
+- Do not use information from other fields, even if it appears useful.
+- Do not leave out an important finding from the reasons just because the
+  summary is short.
+- Return ONLY the final summary as plain text.
 """
-
 async def summarize_claim_assessment(state:InvestigationState)->InvestigationState:
 
     claim_assessment = state.get("claim_assessment", [])
@@ -1867,6 +1694,23 @@ context-aware claim assessment summary.
         "claim_assessment_summary": response.content
     }
 
+
+def calc_max_risk_score_and_max_confidence(state:InvestigationState)->InvestigationState:
+    max_confidence=0
+    for item in state['claim_assessment']:
+        if(item['confidence']>max_confidence):
+            max_confidence=item['confidence']
+    
+    max_risk_score=state['risk_assessment'][0]['risk_score']
+    max_risk_score_level=state['risk_assessment'][0]['risk_level']
+    for i in range(1,len(state['risk_assessment'])):
+        if(state['risk_assessment'][i]['risk_score']>max_risk_score):
+            max_risk_score=state['risk_assessment'][i]['risk_score']
+            max_risk_score_level=state['risk_assessment'][i]['risk_level']
+    return {'risk_score':max_risk_score,'risk_level':max_risk_score_level,'confidence':max_confidence}
+
+
+    
 def summarize_transcript(state:InvestigationState)->InvestigationState:
     return state 
 graph = StateGraph(InvestigationState)
@@ -1887,6 +1731,7 @@ graph.add_node("input_type_is_text", input_type_is_text)
 graph.add_node("input_type_is_url", input_type_is_url)
 graph.add_node("summarize_transcript", summarize_transcript)
 graph.add_node("hive_assesment_analysis_worker", hive_assesment_analysis_worker)
+graph.add_node("calc_max_risk_score_and_max_confidence", calc_max_risk_score_and_max_confidence)
 
 
 graph.add_edge(START, "classify_input")
@@ -1910,7 +1755,8 @@ graph.add_conditional_edges("claim_assesment",hive_assesment_fanout,["hive_asses
 graph.add_edge("hive_assesment_analysis_worker","Risk_assesment")
 graph.add_edge("Risk_assesment","summarize_claim_assessment")
 graph.add_edge("summarize_claim_assessment","summarize_risk_assessment")
-graph.add_edge("summarize_risk_assessment",END)
+graph.add_edge("summarize_risk_assessment","calc_max_risk_score_and_max_confidence")
+graph.add_edge("calc_max_risk_score_and_max_confidence",END)
 
 # graph.add_conditional_edges("orchestrator",fan_out_tasks, ["worker"]
 # for now using InMemorySaver

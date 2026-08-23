@@ -30,6 +30,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
 import { ApiAnalysisResult } from "@/components/MyAnalysisResult";
 import { AnalysisResult2, ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
+import { AnalysisDashboard } from "./AnalysisResultv2";
+export interface UrlType{
+  url:string;
+  claim_id:string;
+}
 
 type Stage = "input" | "processing" | "results";
 
@@ -60,9 +65,11 @@ export function AnalyzeClient() {
   const [stage, setStage] = useState<Stage>("input");
   const [steps, setSteps] = useState<ProcessingStep[]>(baseSteps);
   const [result, setResult] = useState<Analysis | null>(null);
-  let [ClaimAssessment,setClaimAssessment]=useState<ClaimAssessment[]>()
+  let [ClaimAssessment,setClaimAssessment]=useState<ClaimAssessment[]>([])
   let [RiskAssesment,setRiskAssesment]=useState<RiskAssessment[]>([])
-  let [Urls,setUrls]=useState<string[]>([])
+  let [Urls,setUrls]=useState<UrlType[]>([])
+  let [ClaimSummary,setClaimSummary]=useState<string>("")
+  let [RiskSummary,setRiskSummary]=useState<string>("")
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   interface Inputvalidation {
@@ -94,9 +101,12 @@ export function AnalyzeClient() {
         // setResult(found);
         setStage("results");
         setClaimAssessment(found?.claims)
+        setClaimSummary(found?.claim_summary)
         setRiskAssesment(found?.risk_assessment)
+        setRiskSummary(found?.risk_summary)
         setUrls(found?.sources)
         setTab(found?.input_type);
+        
       // }
     }
   }, [presetId]);
@@ -220,13 +230,13 @@ export function AnalyzeClient() {
     return true
   }
 
-  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number) {
+  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number,claim_assessment_summary:any[],risk_assessment_summary:any[]) {
     if (!text || !tab || !user_id)
       return alert("required fields not found error in saveUserInput!!!!!");
     // alert("calling")
     const { data, error } = await supabase
       .from("user_input")
-      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence})
+      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary})
       .select()
       .single(); //now this data contains the newly created row
 
@@ -422,10 +432,10 @@ saveSupportingEvidence([
     return data;
   }
 
-function GetURlList(data:any[]):string[]{
+function GetURlList(data:any[]):UrlType[]{
 if(data.length==0) return []
- let urls:string[]=data.map((item)=>{
-  return item.url
+ let urls:UrlType[]=data.map((item)=>{
+  return {url:item.url,claim_id:item.claim_id}
  })
  return urls
 }
@@ -770,7 +780,7 @@ saveRiskAssessment([
       console.log(response)
       if (success) {
         let createdAt = new Date().toISOString();
-        let data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence);
+        let data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary);
         if(data.length==0){
           console.log("user input is not saved in DB")
           return
@@ -811,6 +821,8 @@ saveRiskAssessment([
         })
 
         setClaimAssessment(filterClaim)
+        setClaimSummary(response.claim_assessment_summary)
+        setRiskSummary(response.risk_assessment_summary)
         setRiskAssesment(response.risk_assessment)
         let urlList1=GetURlList(response.web_evidence)
         let urlList2=GetURlList(response.evidence)
@@ -854,6 +866,7 @@ saveRiskAssessment([
         
       } else {
         console.log(response);
+      setStage("input");
       alert("something went wrong!!!!");
     }
   } catch (error) {
@@ -902,7 +915,7 @@ saveRiskAssessment([
   if (stage === "results" ) {
     return (
       <div className="space-y-6">
-        <PageHeader
+        {/* <PageHeader
           title="Analysis Results"
           description="AI-generated misinformation risk assessment with cross-referenced sources."
           actions={
@@ -911,8 +924,8 @@ saveRiskAssessment([
               New Analysis
             </Button>
           }
-        />
-        <AnalysisResult2 claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
+        /> */}
+        <AnalysisDashboard claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
       </div>
     );
   }
@@ -921,6 +934,7 @@ saveRiskAssessment([
     <div className="space-y-6">
       <PageHeader
         title="Analyze Content"
+        
         description="Submit content to assess misinformation risk and verify its claims."
       />
 
@@ -943,7 +957,7 @@ saveRiskAssessment([
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste a claim, article, social media post, message, or statement here…"
               />
-              <p className="mt-1.5 text-right text-xs text-muted">
+              <p className="mt-1.5  text-right text-xs text-muted">
                 {text.length} characters
               </p>
             </div>

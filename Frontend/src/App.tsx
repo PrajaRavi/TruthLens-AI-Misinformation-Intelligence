@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/components/theme";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
 import Dashboard from "@/pages/Dashboard";
-import { AnalyzeClient } from "@/pages/Analyze";
+import { AnalyzeClient, UrlType } from "@/pages/Analyze";
 import Claims from "@/pages/Claims";
 import History from "@/pages/History";
 import Insights from "@/pages/Insights";
@@ -295,8 +295,8 @@ export function App() {
 
         //! now preparing my RecentAnalysis array
 
-        let Websources: string[] = [];
-        let Factsources: string[] = [];
+        let Websources: UrlType[] = [];
+        let Factsources: UrlType[] = [];
         console.log("----------------------------------------------------");
         console.log(item.id);
         console.log(result.data);
@@ -305,14 +305,14 @@ export function App() {
         if (result.data.length != 0) {
           for (let evidence of result.data) {
             if (evidence.user_input_id == item.id) {
-              Websources.push(evidence.url);
+              Websources.push({claim_id:evidence.claim_id,url:evidence.url});
             }
           }
         }
         if (result1.data.length != 0) {
           for (let evidence of result1.data) {
             if (evidence.user_input_id == item.id) {
-              Factsources.push(evidence.url);
+              Factsources.push({claim_id:evidence.claim_id,url:evidence.url});
             }
           }
         }
@@ -334,6 +334,9 @@ export function App() {
           input_type: item.type || "ravi",
           risk_score: Math.ceil(item.risk_score),
           risk_level: item.risk_level,
+          claim_summary:item.claim_assessment_summary,
+          risk_summary:item.risk_assessment_summary,
+          
           confidence: item.confidence,
           date: formatDate(formattedDate),
           sources: [...Websources, ...Factsources],
@@ -344,7 +347,7 @@ export function App() {
         RecentAnalysisArr.push(RecentAnalysisObj);
       }
 
-      console.log(claim_map);
+      
       setRecentAnalysis(RecentAnalysisArr);
 
       let sampleActivityDataJust: DataPoint[] = [];
