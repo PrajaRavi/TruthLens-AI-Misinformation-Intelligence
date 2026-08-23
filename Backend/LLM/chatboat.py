@@ -465,7 +465,7 @@ Do not produce a verdict, risk score, fact-checking result, or claim
 classification.
 """
 
-async def event_extrator_from_transcript(state:dict):
+async def event_extrator_from_transcript(state:InvestigationState)->InvestigationState:
    transcript=state['transcript']
    prompt=f"""summarize this transcript {transcript}"""
    result=await groq_llm.ainvoke([
@@ -480,6 +480,24 @@ async def event_extrator_from_transcript(state:dict):
                 ])
    result=format_research_output(result.content)
    return {'input_text':result}
+
+async def event_extrator_from_text(state:InvestigationState)->InvestigationState:
+   transcript=state['input_text']
+   if(state['input_type']=="text" and len(transcript)>100):
+      prompt=f"""summarize this transcript {transcript}"""
+      result=await groq_llm.ainvoke([
+                     {
+                           "role": "system",
+                           "content": EVENT_EXTRACTION_SYSTEM_PROMPT
+                     },
+                     {
+                           "role": "user",
+                           "content": prompt
+                     }
+                  ])
+      result=format_research_output(result.content)
+      return {'input_text':result}
+  
   
   
 
@@ -1720,8 +1738,6 @@ def calc_max_risk_score_and_max_confidence(state:InvestigationState)->Investigat
 
 
     
-def summarize_transcript(state:InvestigationState)->InvestigationState:
-    return state 
 graph = StateGraph(InvestigationState)
 graph.add_node("classify_input", classify_input)
 graph.add_node("extract_claims", extract_claims)
@@ -1738,7 +1754,8 @@ graph.add_node("summarize_risk_assessment", summarize_risk_assessment)
 graph.add_node("handling_input_type_url", handling_input_type_url)
 graph.add_node("input_type_is_text", input_type_is_text)
 graph.add_node("input_type_is_url", input_type_is_url)
-graph.add_node("summarize_transcript", summarize_transcript)
+graph.add_node("event_extrator_from_transcript", event_extrator_from_transcript)
+graph.add_node("event_extrator_from_text", event_extrator_from_text)
 graph.add_node("hive_assesment_analysis_worker", hive_assesment_analysis_worker)
 graph.add_node("calc_max_risk_score_and_max_confidence", calc_max_risk_score_and_max_confidence)
 
@@ -1746,10 +1763,11 @@ graph.add_node("calc_max_risk_score_and_max_confidence", calc_max_risk_score_and
 graph.add_edge(START, "classify_input")
 # graph.add_edge("classify_input","extract_claims")
 graph.add_conditional_edges("classify_input",input_router)
-graph.add_edge("input_type_is_text","extract_claims")
+graph.add_edge("input_type_is_text","event_extrator_from_text")
+graph.add_edge("event_extrator_from_text","extract_claims")
 graph.add_edge("input_type_is_url","handling_input_type_url")
-graph.add_edge("handling_input_type_url","summarize_transcript")
-graph.add_edge("summarize_transcript","extract_claims")
+graph.add_edge("handling_input_type_url","event_extrator_from_transcript")
+graph.add_edge("event_extrator_from_transcript","extract_claims")
 graph.add_edge("extract_claims", "finding_eveidence")
 # graph.add_edge("finding_eveidence","hive_text_moderation")
 graph.add_conditional_edges("finding_eveidence",fan_out_evidence_fact,["google_fact_checks_worker"])
@@ -1771,6 +1789,8 @@ graph.add_edge("calc_max_risk_score_and_max_confidence",END)
 # for now using InMemorySaver
 checkpointer=InMemorySaver()
 AGENT=graph.compile()
+
+
 
 
 
