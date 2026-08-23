@@ -14,6 +14,7 @@ import { AreaChart } from "@/components/charts/AreaChart1";
 import { DashBoardTableMe, FactCheckReport } from "@/components/DataTable2";
 import AnalysisDashboard from "./AnalysisResultv2";
 import { DashboardLayout } from "@/App";
+import WarningTyping from "@/utils/WarningTyping";
 export interface DataPoint {
   x: string;
   y: number;
@@ -30,9 +31,7 @@ export const sampleFactCheckData: FactCheckReport[] = [
     confidence: 0.95,
     date: "2026-08-18",
     sources: [
-      "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters",
-      "https://www.cdc.gov/coronavirus/2019-ncov/index.html",
-    ],
+      {claim_id:"hello",url:"https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters"}],
     claims: [
       {
         claim_id: "claim-101",
@@ -85,8 +84,8 @@ export const sampleFactCheckData: FactCheckReport[] = [
     confidence: 0.87,
     date: "2026-08-19",
     sources: [
-      "https://www.fcc.gov/engineering-technology/electromagnetic-compatibility-division/radio-frequency-safety-0",
-    ],
+      {claim_id:"hello",url:"https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters"}],
+    
     claims: [
       {
         claim_id: "claim-201",
@@ -119,8 +118,8 @@ export const sampleFactCheckData: FactCheckReport[] = [
     confidence: 0.94,
     date: "2026-08-20",
     sources: [
-      "https://www.iea.org/reports/global-ev-outlook-2025",
-    ],
+      {claim_id:"hello",url:"https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters"}],
+    
     claims: [
       {
         claim_id: "claim-301",
@@ -200,7 +199,12 @@ const [form, setForm] = useState({
     });
   };
 
-
+  const warnings = [
+  " This claim contains information that may be misleading.",
+  " Some parts of the claim are not supported by the available evidence.",
+  " Please check the information carefully before making a decision.",
+  " AI can misbehave or halucinate so before making final decesion think twice.."
+];
 async function submit(e: React.FormEvent) {
     e.preventDefault();
   setLoading(true);
@@ -261,6 +265,9 @@ toast({
     // <DashboardLayout>
     // <AnalysisDashboard/>
     // </DashboardLayout>
+  
+
+
     <AuthShell
       title="Create your account"
       subtitle="Start analyzing content and verifying claims."

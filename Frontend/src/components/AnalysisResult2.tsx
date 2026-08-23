@@ -393,7 +393,10 @@ export function AnalysisResult2({
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {urls.map((url, index) => (
-            <UrlPreview key={`${url}-${index}`} url={url} />
+            <span className={""}>
+
+            <UrlPreview  key={`${url}-${index}`} url={url} />
+            </span>
           ))}
         </div>
       </section>

@@ -1580,7 +1580,7 @@ If a difficult word is absolutely necessary, explain it using very simple words.
 Do not use fancy words just to sound professional.
 
 IMPORTANT INFORMATION RULE:
-If the assessment contains the name of a person, place, event, organization,
+If the assessment,reason contains the name of a person, place, event, organization,
 company, product, group, or any other important named thing that helps the user
 understand the risk or claim, KEEP that name in the summary.
 Do not remove or replace useful names with vague words such as "a person",
@@ -1643,6 +1643,15 @@ claims and identify the most important overall findings, common patterns,
 differences, repeated issues, and important concerns.
 
 Write ONE concise but detailed, context-aware summary.
+
+IMPORTANT INFORMATION RULE:
+If the assessment,reason contains the name of a person, place, event, organization,
+company, product, group, or any other important named thing that helps the user
+understand the risk or claim, KEEP that name in the summary.
+Do not remove or replace useful names with vague words such as "a person",
+"an organization", or "an event" when the actual name is available.
+Only include names that are relevant to the main findings. Do not add names
+that are not present in the provided data.
 
 LANGUAGE RULE:
 Use VERY SIMPLE, PLAIN, EVERYDAY ENGLISH. Write as if you are explaining

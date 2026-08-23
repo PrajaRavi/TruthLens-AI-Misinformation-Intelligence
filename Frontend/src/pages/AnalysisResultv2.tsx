@@ -701,10 +701,10 @@ function ClaimAssessmentItem({
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                   {urls.map((url, index) => (
-                                    <div className={url.claim_id==assessment.claim_id?"block":"hidden"}>
+                                    <span className={url.claim_id==assessment.claim_id?"block min-w-0":"hidden"}>
 
                                     <UrlPreview  key={`${url}-${index}`} url={url.url} />
-                                    </div>
+                                    </span>
                                   ))}
                                 </div>
                               </section>
