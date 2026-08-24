@@ -1,5 +1,6 @@
-
+// https://youtube.com/shorts/wJ1F_Qvo7a4?si=rAcpEM-nhPAeUHEx
 // https://i.ytimg.com/vi/O4LqCxB5XZc/maxresdefault.jpg
+// https://ik.imagekit.io/k5imwrh1hh/rag_documents/Codex_Image_Aug_21__2026__09_20_55_PM_AmNXaAPVW.png
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "@/router";
 import {
@@ -25,7 +26,7 @@ import { AnalysisResults } from "@/components/AnalysisResults";
 import { Disclaimer } from "@/components/states";
 import { useToast } from "@/components/ui/Toast";
 import { analyses, processingSteps as baseSteps } from "@/data/mockData";
-import type { Analysis, InputType, ProcessingStep } from "@/types";
+import type { Analysis, Claim, InputType, ProcessingStep } from "@/types";
 import axios from "axios";
 import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
@@ -117,12 +118,12 @@ export function AnalyzeClient() {
       // if (found) {
         // setResult(found);
         setStage("results");
-        setTitle(found?.title)
+        setTitle(String(found?.title))
         
         setClaimAssessment(found?.claims)
-        setClaimSummary(found?.claim_summary)
+        setClaimSummary(String(found?.claim_summary))
         setRiskAssesment(found?.risk_assessment)
-        setRiskSummary(found?.risk_summary)
+        setRiskSummary(String(found?.risk_summary))
         setUrls(found?.sources)
         setTab(found?.input_type);
         
@@ -150,6 +151,8 @@ export function AnalyzeClient() {
   }, [tab, text, url, imageFile, audioFile, videoFile]);
 
   async function Validate_input(text: string): Promise<Inputvalidation> {
+    console.log(text)
+    
     try {
       setInputValidationLoading(true);
       let { data } = await axios.post(
@@ -680,13 +683,17 @@ saveRiskAssessment([
 
   */
   async function runAnalysis() {
+    // console.log(url)
     if (!canAnalyze) return;
-    if (tab != "text") {
+    if (tab=="image" ||tab =="audio" ||tab=="video") {
       return toast({
         type: "info",
         title: "Coming Soon",
         description: "This feature is not implemented yet.",
       });
+    }
+    if(tab=="url"){
+      setText(String(url))
     }
     /*
 
@@ -735,8 +742,9 @@ saveRiskAssessment([
 
     
     let validation_msg = await Validate_input(text);
-    console.log(validation_msg);
-    if (validation_msg?.error) {
+    // return  console.log(validation_msg)
+    // console.log(validation_msg);
+    if (validation_msg?.error==true) {
       return toast({
         type: "error",
         title: "InputValidation",
@@ -1047,6 +1055,13 @@ saveRiskAssessment([
               formatsLabel="JPG, PNG, WEBP"
               icon={<ImageIcon className="h-6 w-6" />}
               file={imageFile}
+
+
+        //! simple approach
+        // 1. upload the image on imagekit now it will give a public url
+        // 2. now call fastAPI api which is going to extract text from this image and return it in good format
+        // 3. now call the same research api using these text content
+
               onFile={setImageFile}
               preview={(f) => (
                 <img
@@ -1189,10 +1204,11 @@ saveRiskAssessment([
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row">
               <Input
-                value={url}
+                value={text}
                 onChange={(e) => {
-                  setUrl(e.target.value);
+                  setText(e.target.value);
                   setUrlPreview(false);
+                  setUrl(e.target.value)
                 }}
                 placeholder="Paste an article, webpage, or social media URL"
                 className="flex-1"

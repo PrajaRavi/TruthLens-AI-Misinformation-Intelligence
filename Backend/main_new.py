@@ -23,6 +23,11 @@ origins = [
 ]
 import os
 from pydantic import BaseModel
+IMAGEKIT_PUBLIC_KEY = os.getenv("IMAGEKIT_PUBLIC_KEY", "your_public_key_here")
+IMAGEKIT_PRIVATE_KEY = os.getenv("IMAGEKIT_PRIVATE_KEY", "your_private_key_here")
+IMAGEKIT_URL_ENDPOINT_BASE = os.getenv("IMAGEKIT_URL_ENDPOINT_BASE", "https://ik.imagekit.io/")
+img_kit_id=os.getenv('imagekit_id')
+
 
 app=FastAPI()
 app.add_middleware(
@@ -72,7 +77,36 @@ async def hello(input:ResearchBody):
     print(e)
     return HTTPException(status_code=500,detail={'success':'false','msg':str(e)})
 
+@app.get("/api/imagekit-auth")
+def generate_imagekit_signature():
+    """
+    Endpoint that accepts an imagekit_Id parameter and generates
+    authentication parameters (token, expire, signature) for ImageKit upload SDK.
+    """
+    try:
+        
+        # Initialize ImageKit instance dynamically with the specified imagekit_Id
+        ik_client = ImageKit(
+            private_key=IMAGEKIT_PRIVATE_KEY,
+        )
+
+        # Generate authentication parameters
+        auth_params = ik_client.helper.get_authentication_parameters()
+        print(auth_params)
+
+        # Send response back to frontend
+        return {
+            "token": auth_params["token"],
+            "expire": auth_params["expire"],
+            "signature": auth_params["signature"],
+            "imagekit_id": img_kit_id
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate ImageKit signature: {str(e)}"
+        )
 
 
-  
   

@@ -2,7 +2,7 @@ import { Check, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import type { ProcessingStep } from "@/types";
-import WarningTyping from "@/utils/WarningTyping";
+// import WarningTyping from "@/utils/WarningTyping";
 
 export function AnalysisProgress({ steps }: { steps: ProcessingStep[] }) {
   const doneCount = steps.filter((s) => s.status === "done").length;
@@ -15,7 +15,7 @@ export function AnalysisProgress({ steps }: { steps: ProcessingStep[] }) {
     <Card className="mx-auto max-w-xl">
       <CardContent className="pt-6">
         <div className="mb-6 flex flex-col items-center text-center">
-          <WarningTyping
+          {/* <WarningTyping
   warnings={[
   " This claim contains information that may be misleading.",
   " Some parts of the claim are not supported by the available evidence.",
@@ -24,7 +24,7 @@ export function AnalysisProgress({ steps }: { steps: ProcessingStep[] }) {
 ]}
   typingSpeed={60}
   sentenceInterval={2000}
-/>
+/> */}
           <div className="relative mt-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 pulse-ring">
             <Loader2 className="h-7 w-7 animate-spin text-primary" />
           </div>

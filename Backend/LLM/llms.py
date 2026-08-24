@@ -11,10 +11,20 @@ TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
 hive_api_key=os.getenv("hive_api_key")
 GOOGLE_API_KEY=os.getenv("GOOGLE_API_KEY")
 nomic_api_key=os.getenv("NOMIC_API_KEY")
+groq_api_key2=os.getenv("groq_api_key2")
+
 groq_llm = ChatGroq(
     model="openai/gpt-oss-120b",
     temperature=0.3, #->it is between 0 to 2  and it is creativity parameter if it is 0 then for same question it will give same ans alway but as we increase this number then our model gives diffrent ans on each time on asking the  same question
     max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
+groq_llm2 = ChatGroq(
+    model="openai/gpt-oss-120b",
+    temperature=0.3, #->it is between 0 to 2  and it is creativity parameter if it is 0 then for same question it will give same ans alway but as we increase this number then our model gives diffrent ans on each time on asking the  same question
+    max_tokens=None,
+    api_key=groq_api_key2,
     timeout=None,
     max_retries=2,
 )

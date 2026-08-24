@@ -28,26 +28,29 @@ class InputValidation(BaseModel):
 
 async def Validate_input(text:str):
   input_text=text
-  validate_input_prompt=f"""
+  validate_input_prompt = f"""
   You are an input validation system for a misinformation
   verification platform.
 
   Determine whether the provided input contains meaningful
-  linguistic content that can be investigated for factual claims.
+  linguistic content or a valid Web resource (URL) that can be 
+  investigated for factual claims.
 
-  Return INVALID if the input:
-  - consists primarily of random symbols or characters
+  Return False if the input:
+  - consists primarily of random symbols, gibberish, or characters
   - is meaningless or unintelligible
-  - contains no meaningful statement, question, or claim
+  - contains no meaningful statement, question, claim, or URL
 
-  Return VALID if the input contains meaningful language,
-  even if the statement itself may be false, misleading, or
-  factually incorrect.
+  Return True if the input contains:
+  - Meaningful text/language, even if the statement itself may be false, 
+    misleading, or factually incorrect.
+  - A valid URL (e.g., starting with http:// or https://) pointing to content 
+    to be verified.
 
   Important:
-  Do NOT determine whether the input is true or false.
-  Only determine whether it is meaningful and suitable for
-  further misinformation analysis.
+  Do NOT determine whether the content or URL destination is true or false.
+  Only determine whether the input is valid, intelligible, or a URL suitable 
+  for further misinformation analysis.
 
   INPUT:
   {input_text}

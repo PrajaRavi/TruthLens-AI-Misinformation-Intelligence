@@ -24,7 +24,7 @@ import trafilatura
 
 from langchain_classic.utils.math import cosine_similarity
 from langchain_nomic import NomicEmbeddings
-from LLM.llms import groq_llm,gemini_llm,hive_api_key,google_fact_api_key,embeddings
+from LLM.llms import groq_llm,groq_llm2,hive_api_key,google_fact_api_key,embeddings
 from LLM.ResearchChatbot import SEARCH_CHATBOT,format_research_output
 
 
@@ -637,7 +637,7 @@ class HarmAssessment(BaseModel):
     harmful: bool
     reason: str
 
-sturc_llm_for_hive_analysis=gemini_llm.with_structured_output(HarmAssessment,method="json_schema")
+sturc_llm_for_hive_analysis=groq_llm2.with_structured_output(HarmAssessment,method="json_schema")
 
 def hive_assesment_fanout(state:InvestigationState) -> List[Send]:
     """
@@ -817,7 +817,7 @@ def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
 
 
 async def search_web_evidence_worker(payload:dict) ->InvestigationState:
-    tavily_tool=TavilySearch(max_results=1,topic="general")
+    tavily_tool=TavilySearch(max_results=3,topic="general")
     print("search_web_evidence start")
     # print(payload)
     claim=payload['claim']
@@ -970,7 +970,7 @@ async def web_evidence_analysis(state:InvestigationState) -> InvestigationState:
 
     web_evidence = state["web_evidence"]
 
-    structured_llm = gemini_llm.with_structured_output(EvidenceAnalysis,method="json_schema")
+    structured_llm = groq_llm2.with_structured_output(EvidenceAnalysis,method="json_schema")
 
     for evidence_item in web_evidence:
 
@@ -1088,7 +1088,7 @@ class ClaimAssessmentResult(BaseModel):
 
     contradicting_evidence_count: int
 
-claim_assesment_struc_op=gemini_llm.with_structured_output(ClaimAssessmentResult)
+claim_assesment_struc_op=groq_llm2.with_structured_output(ClaimAssessmentResult)
 
 CLAIM_ASSESSMENT_SYSTEM_PROMPT = """
 You are an expert fact-checking and claim assessment analyst.
@@ -1468,7 +1468,7 @@ class RiskAssessmentResult(BaseModel):
         description="Brief explanation of why this risk level was assigned"
     )
 
-risk_assesment_struct_output=gemini_llm.with_structured_output(RiskAssessmentResult)
+risk_assesment_struct_output=groq_llm2.with_structured_output(RiskAssessmentResult)
 
 async def risk_assessment(state:InvestigationState) -> InvestigationState:
     """

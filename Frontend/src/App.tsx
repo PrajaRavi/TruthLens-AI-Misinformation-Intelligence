@@ -330,7 +330,7 @@ export function App() {
         
         let RecentAnalysisObj: FactCheckReport = {
           id: item.id,
-          title: String(item.text),
+          title: String(item.text)||"",
           input_type: item.type || "ravi",
           risk_score: Math.ceil(item.risk_score),
           risk_level: item.risk_level,

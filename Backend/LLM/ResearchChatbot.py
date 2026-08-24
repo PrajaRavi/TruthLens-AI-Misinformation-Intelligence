@@ -21,8 +21,8 @@ from typing import Annotated,Literal
 
 #! Research chatbot agent
 tavily_tool = TavilySearch(
-    max_results=2,
-    search_depth="basic", # "basic" or "advanced"
+    max_results=4,
+    search_depth="advanced", # "basic" or "advanced"
     
     
 )

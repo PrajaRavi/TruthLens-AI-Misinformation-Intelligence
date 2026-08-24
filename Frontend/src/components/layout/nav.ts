@@ -20,10 +20,10 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Analyze Content", href: "/analyze", icon: ScanSearch },
-  // { label: "Analysis History", href: "/history", icon: History },
+  { label: "Analysis History", href: "/history", icon: History },
   // { label: "Source Verification", href: "/sources", icon: ShieldCheck },
   { label: "Claim Explorer", href: "/claims", icon: FileSearch },
-  // { label: "Reports", href: "/reports", icon: FileText },
+  { label: "Reports", href: "/reports", icon: FileText },
   { label: "AI Insights", href: "/insights", icon: Sparkles },
   { label: "Settings", href: "/settings", icon: Settings },
 ];

@@ -2,10 +2,33 @@ import { useRef, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, formatFileSize } from "@/lib/utils";
-
+import axios from "axios";
 export interface UploadedFile {
   file: File;
   url: string;
+}
+
+// Response schema from FastAPI /api/imagekit-auth
+interface ImageKitAuthResponse {
+  token: string;
+  expire: number;
+  signature: string;
+  imagekit_id?: string;
+}
+
+// Response schema returned by ImageKit Upload API
+interface ImageKitUploadResponse {
+  fileId: string;
+  name: string;
+  url: string;
+  thumbnailUrl: string;
+  height: number;
+  width: number;
+  size: number;
+  filePath: string;
+  fileType: string;
+  isPrivateFile: boolean;
+  customCoordinates: string | null;
 }
 
 interface UploadZoneProps {
@@ -16,6 +39,10 @@ interface UploadZoneProps {
   file: UploadedFile | null;
   preview?: (file: UploadedFile) => React.ReactNode;
 }
+
+const FASTAPI_BASE_URL = 'http://localhost:8000'; // Your FastAPI backend URL
+const IMAGEKIT_PUBLIC_KEY = import.meta.env.IMAGEKIT_PUBLIC_KEY||"public_yP80Gt0Hdrw76WuuA2iHLaZCRxk="; // Replace with your ImageKit Public Key
+const IMAGEKIT_UPLOAD_ENDPOINT = 'https://upload.imagekit.io/api/v1/files/upload';
 
 export function UploadZone({
   accept,
@@ -28,26 +55,81 @@ export function UploadZone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  
+  const [uploadedData, setUploadedData] = useState<ImageKitUploadResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
 
-  function handleFiles(files: FileList | null) {
+  async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const f = files[0];
     const url = URL.createObjectURL(f);
     // Simulate upload progress (frontend demo).
     setProgress(0);
+    onFile({ file: f, url });
+    
+
+    /*
     const timer = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
           clearInterval(timer);
-          onFile({ file: f, url });
           return 100;
         }
         return p + 20;
       });
     }, 80);
-  }
+    */
+try {
+      // Step A: Fetch authentication parameters from FastAPI backend
+      const authResponse = await axios.get<ImageKitAuthResponse>(
+        `${FASTAPI_BASE_URL}/api/imagekit-auth`
+      );
+      const { token, expire, signature } = authResponse.data;
 
-  if (file) {
+      // Step B: Build FormData for ImageKit V1 API
+      const formData = new FormData();
+      formData.append('file', files[0]);
+      formData.append('fileName', files[0].name);
+      formData.append('publicKey', IMAGEKIT_PUBLIC_KEY);
+      formData.append('signature', signature);
+      formData.append('token', token);
+      formData.append('expire', expire.toString());
+      formData.append('useUniqueFileName', 'true'); // Optional: appends unique suffix
+      formData.append('folder', '/rag_documents');  // Optional: folder inside ImageKit
+
+      // Step C: Send POST request to ImageKit with upload progress tracking
+      const uploadResponse = await axios.post<ImageKitUploadResponse>(
+        IMAGEKIT_UPLOAD_ENDPOINT,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setProgress(percentCompleted);
+            }
+          },
+        }
+      );
+      // setUploadProgress(0)
+      // Step D: Successfully set uploaded file details
+      setUploadedData(uploadResponse.data);
+      console.log(uploadResponse.data)
+      
+      
+    } finally {
+      setIsUploading(false);
+    }
+      
+    
+  }
+  if (file && progress>90) {
     return (
       <div className="rounded-xl border border-border bg-surface p-4">
         {preview && <div className="mb-3">{preview(file)}</div>}
