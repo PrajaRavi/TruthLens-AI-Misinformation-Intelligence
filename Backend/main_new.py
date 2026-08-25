@@ -64,7 +64,7 @@ def hello():
 async def hello(input:ResearchBody):
   print(input)
   try:
-     final_result=await AGENT.ainvoke({'input_text':input.input,'input_type':input.type,'thread_id':input.thread_id},config={'configurable':{'thread_id':input.thread_id}})
+     final_result=await AGENT.ainvoke({'input_text':input.input,'input_type':input.type,'thread_id':input.thread_id,"content_length_th":200},config={'configurable':{'thread_id':input.thread_id}})
      if(final_result):
        return JSONResponse({'success':'true','msg':final_result})
      else:

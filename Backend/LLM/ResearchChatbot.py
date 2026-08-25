@@ -1,6 +1,7 @@
 
 from langgraph.graph import StateGraph,START,END
 from typing import TypedDict,List
+from pydantic import Field
 from langchain_groq import ChatGroq
 from langchain_core.messages import BaseMessage,HumanMessage,SystemMessage,AIMessage
 from langchain_core.prompts import PromptTemplate
@@ -20,6 +21,9 @@ import os
 from typing import Annotated,Literal
 
 #! Research chatbot agent
+
+#! Research chatbot agent
+
 tavily_tool = TavilySearch(
     max_results=4,
     search_depth="advanced", # "basic" or "advanced"
@@ -47,7 +51,7 @@ def calculator(first_num:float,second_num:float,operation:str)->dict:
      return {'error':"Invalid input"}
 
 my_tool=[calculator,tavily_tool]
-llm_with_tools=gemini_llm.bind_tools(tools=my_tool)
+llm_with_tools=groq_llm.bind_tools(tools=my_tool)
 tool_node=ToolNode(tools=my_tool)
 
 class AgentState(TypedDict):
@@ -55,7 +59,8 @@ class AgentState(TypedDict):
         List[BaseMessage],
         add_messages
     ]
-  
+    curr:int=Field(default=1,description="this will store the current loop no") #this will store the current loop no
+    max:int=Field(default=3,description="this is the max loop no it can run") #this is the max loop no it can run
 
 
 
@@ -68,7 +73,10 @@ class AgentState(TypedDict):
 async def chat_node(
     state: AgentState
 ) -> AgentState:
-    print(state['messages'][-1].content)
+    print(state['curr'],state['max'])
+    if(int(state['curr'])<=int(state['max'])):
+       return state
+       
     system_message=SystemMessage(content="act as a helpful and honest virtual assistant")
     messages =[system_message]+ state["messages"]
 
@@ -80,9 +88,11 @@ async def chat_node(
     response =  await llm_with_tools.ainvoke(
         messages
     )
-
+    curr=int(state['curr'])
+    
     return {
-        "messages": [response]
+        "messages": [response],
+        "curr":curr+1
     }
 
 graph = StateGraph(

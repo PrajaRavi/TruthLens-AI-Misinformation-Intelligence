@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Link from "@/router";
 
 import { Eye } from "lucide-react";
-import { UrlType } from "@/pages/Analyze";
+import { UrlType, WebPageDataType, YtDataType } from "@/pages/Analyze";
 
 export interface Claim {
   claim_id: string;
@@ -36,6 +36,8 @@ export interface FactCheckReport {
   risk_level: string;
   confidence: number;
   claims: Claim[];
+  yt_data:YtDataType;
+  webpage_data:WebPageDataType;
   sources: UrlType[];
   date: string;
   risk_assessment: RiskAssessment[];

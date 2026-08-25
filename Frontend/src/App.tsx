@@ -330,12 +330,16 @@ export function App() {
         
         let RecentAnalysisObj: FactCheckReport = {
           id: item.id,
+          url:item.url||"https://raviporto.onrender.com",
           title: String(item.text)||"",
           input_type: item.type || "ravi",
           risk_score: Math.ceil(item.risk_score),
           risk_level: item.risk_level,
           claim_summary:item.claim_assessment_summary,
           risk_summary:item.risk_assessment_summary,
+          webpage_data:{title:item.url_title,webpage_url:item.url},
+          yt_data:{thumbnail:item.thumbnail,title:item.url_title,video_url:item.url},
+
           
           confidence: item.confidence,
           date: formatDate(formattedDate),

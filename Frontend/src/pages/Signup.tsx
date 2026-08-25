@@ -15,6 +15,7 @@ import { DashBoardTableMe, FactCheckReport } from "@/components/DataTable2";
 import AnalysisDashboard from "./AnalysisResultv2";
 import { DashboardLayout } from "@/App";
 import WarningTyping from "@/utils/WarningTyping";
+import ContextChatbot from "@/components/ConverChatboat";
 export interface DataPoint {
   x: string;
   y: number;
@@ -266,7 +267,6 @@ toast({
     // <AnalysisDashboard/>
     // </DashboardLayout>
   
-
 
     <AuthShell
       title="Create your account"

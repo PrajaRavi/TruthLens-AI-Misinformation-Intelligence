@@ -46,7 +46,7 @@ const tabItems = [
   { value: "text", label: "Text", icon: <FileText className="h-4 w-4" /> },
   { value: "image", label: "Image", icon: <ImageIcon className="h-4 w-4" /> },
   { value: "audio", label: "Audio", icon: <Mic className="h-4 w-4" /> },
-  { value: "video", label: "Video", icon: <Video className="h-4 w-4" /> },
+  // { value: "video", label: "Video", icon: <Video className="h-4 w-4" /> },
   { value: "url", label: "URL", icon: <Link2 className="h-4 w-4" /> },
 ];
 
@@ -96,6 +96,7 @@ export function AnalyzeClient() {
   const [author, setAuthor] = useState("");
   const [pubDate, setPubDate] = useState("");
   const { user,setGetuserSignal } = useUser();
+  let [SourceUrl,setSourceUrl]=useState<string>("")
 
   const [url, setUrl] = useState("");
   const [imageFile, setImageFile] = useState<UploadedFile | null>(null);
@@ -125,7 +126,10 @@ export function AnalyzeClient() {
         setRiskAssesment(found?.risk_assessment)
         setRiskSummary(String(found?.risk_summary))
         setUrls(found?.sources)
+        setYtData(found?.yt_data)
+        setWebPageData(found?.webpage_data)
         setTab(found?.input_type);
+        setSourceUrl(found.url)
         
       // }
     }
@@ -252,13 +256,13 @@ export function AnalyzeClient() {
     return true
   }
 
-  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number,claim_assessment_summary:any[],risk_assessment_summary:any[]) {
+  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number,claim_assessment_summary:any[],risk_assessment_summary:any[],url:string,thumbnail:string,url_title:string) {
     if (!text || !tab || !user_id)
       return alert("required fields not found error in saveUserInput!!!!!");
     // alert("calling")
     const { data, error } = await supabase
       .from("user_input")
-      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary})
+      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail,url_title})
       .select()
       .single(); //now this data contains the newly created row
 
@@ -685,7 +689,7 @@ saveRiskAssessment([
   async function runAnalysis() {
     // console.log(url)
     if (!canAnalyze) return;
-    if (tab=="image" ||tab =="audio" ||tab=="video") {
+    if (tab =="audio" ||tab=="video") {
       return toast({
         type: "info",
         title: "Coming Soon",
@@ -740,6 +744,9 @@ saveRiskAssessment([
 
 */
 
+    if(tab=="image"){
+    setText(String(imageFile?.url))
+      }
     
     let validation_msg = await Validate_input(text);
     // return  console.log(validation_msg)
@@ -796,7 +803,10 @@ saveRiskAssessment([
 
     try {
       let user_input_id=uuidv4();
-
+      
+      
+      
+      // return alert(text)
       let { data } = await axios.post(`${FASTAPI_BASE_URL}/api/research`, {
         input: text,
         type: tab,
@@ -807,11 +817,22 @@ saveRiskAssessment([
       console.log(response)
       if (success) {
         let createdAt = new Date().toISOString();
-        let data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary);
+        let data=[];
+        
+        if(tab=="text"){
+          //! in the case of text only i have to save user input before calling the research api
+          //! in case of url,image,audio we have to store url and as well as the text content so we will store userinput after api call
+          data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"",null,null);
+          
+        }
+
+        data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url);
         if(data.length==0){
           console.log("user input is not saved in DB")
           return
         }
+        
+
 
         //!  Preparing data for showing in ui after analysis
         let claims_data=await saveClaims(response.claims,response.evidence,response.web_evidence,response.supporting_evidence,response.contradicting_evidence,response.claim_assessment,response.hive_assessment,response.risk_assessment);
@@ -854,6 +875,7 @@ saveRiskAssessment([
           setWebPageData({title:response.webpage_title,webpage_url:response.input_url})
 
         }
+        
         setClaimAssessment(filterClaim)
         setClaimSummary(response.claim_assessment_summary)
         setRiskSummary(response.risk_assessment_summary)
@@ -960,7 +982,7 @@ saveRiskAssessment([
             </Button>
           }
         /> */}
-        <AnalysisDashboard input_type={tab} title={Title} claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
+        <AnalysisDashboard YtData={YtData} WebPageData={WebPageData} input_type={tab} title={Title} claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
       </div>
     );
   }
@@ -1064,11 +1086,13 @@ saveRiskAssessment([
 
               onFile={setImageFile}
               preview={(f) => (
+                <>
                 <img
                   src={f.url}
                   alt="Uploaded preview"
                   className="max-h-64 w-full rounded-lg object-contain"
-                />
+                  />
+                  </>
               )}
             />
             <div className="rounded-lg border border-dashed border-border-strong bg-surface-2/40 p-4">
@@ -1080,10 +1104,17 @@ saveRiskAssessment([
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button onClick={runAnalysis} disabled={!canAnalyze}>
+              <Button
+                onClick={runAnalysis}
+                loading={InputValidationLoading}
+                disabled={!canAnalyze}
+              >
                 <Search className="h-4 w-4" />
-                Analyze Content
+                {InputValidationLoading
+                  ? "Validating your input..."
+                  : "Analyze Content"}
               </Button>
+
               <Button variant="outline" onClick={() => setImageFile(null)}>
                 Clear
               </Button>
@@ -1246,10 +1277,20 @@ saveRiskAssessment([
             )}
 
             <div className="flex flex-wrap gap-3">
-              <Button onClick={runAnalysis} disabled={!canAnalyze}>
+              <Button
+                onClick={runAnalysis}
+                loading={InputValidationLoading}
+                disabled={!canAnalyze}
+              >
+                <Search className="h-4 w-4" />
+                {InputValidationLoading
+                  ? "Validating your input..."
+                  : "Analyze Content"}
+              </Button>
+              {/* <Button onClick={runAnalysis} disabled={!canAnalyze}>
                 <Search className="h-4 w-4" />
                 Analyze URL
-              </Button>
+              </Button> */}
               <Button
                 variant="outline"
                 onClick={() => {

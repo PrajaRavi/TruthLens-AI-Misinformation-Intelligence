@@ -24,7 +24,7 @@ import trafilatura
 
 from langchain_classic.utils.math import cosine_similarity
 from langchain_nomic import NomicEmbeddings
-from LLM.llms import groq_llm,groq_llm2,hive_api_key,google_fact_api_key,embeddings
+from LLM.llms import groq_llm,groq_llm2,hive_api_key,google_fact_api_key,embeddings,gemini_llm
 from LLM.ResearchChatbot import SEARCH_CHATBOT,format_research_output
 
 
@@ -69,6 +69,7 @@ class InvestigationState(TypedDict):
     
     claim_assessment_summary:str|None
     risk_assessment_summary:str|None
+    content_length_th:int|None
     
 
 
@@ -229,6 +230,7 @@ async def extract_webpage_content(url: str) -> dict:
 
         # Extract structured object containing metadata + body text
         data = trafilatura.bare_extraction(downloaded)
+        
         if data:
             title = data.title          # Extracted page title
             text = data.text         # Main article text
@@ -242,7 +244,7 @@ async def extract_webpage_content(url: str) -> dict:
             return {
                 "source_type": "webpage",
                 "source_url": url,
-                "text": text,
+                "text": str(text),
                 "title":title,
                 "author":author
             }
@@ -302,7 +304,11 @@ async def classify_input(state:InvestigationState) ->InvestigationState:
         
     # Common audio URLs
     elif path.endswith((".mp3", ".wav", ".ogg", ".m4a", ".aac")):
-        input_type = "audio"
+        input_type = "audio" \
+        ""
+    # Common Image URLs
+    elif path.endswith((".jpg", ".png", ".jpeg", ".webp")):
+        input_type = "image"
 
     # Everything else is treated as a webpage for now
     else:
@@ -317,19 +323,20 @@ def input_type_is_text(state:InvestigationState)->InvestigationState:
 def input_type_is_url(state:InvestigationState)->InvestigationState:
     print("input_type_is_url start")
     return state
-def input_router(state:InvestigationState)->Literal["input_type_is_text","input_type_is_url"]:
+def input_router(state:InvestigationState)->Literal["input_type_is_text","input_type_is_url","input_type_image"]:
     if(state['input_type']=="audio"):
         pass
     elif(state['input_type']=="video"):
         pass
     elif(state['input_type']=="image"):
-        pass
+        return "input_type_image"
     elif(state['input_type']=="text"):
         return "input_type_is_text"
     elif(state['input_type']=="url" or state['input_type']=="youtube" or state['input_type']=="webpage"):
         return "input_type_is_url"
 
 async def handling_input_type_url(state:InvestigationState)->InvestigationState:
+    content_length_th=state['content_length_th']
     print("handling_input_type_url")
     if(state['input_type']=="youtube"):
 
@@ -378,11 +385,62 @@ async def handling_input_type_url(state:InvestigationState)->InvestigationState:
                 info = ydl.extract_info(state['input_url'], download=False)
                 title = info.get('title')
                 thumbnail = info.get('thumbnail')
-                return {'webpage_title':title,"yt_thumbnail":thumbnail,'transcript':transcript}
+                return {'webpage_title':title,"yt_thumbnail":thumbnail,'input_text':str(transcript)[0:int(content_length_th)]}
     elif(state['input_type']=="webpage"):
          data=await extract_webpage_content(state['input_url'])
          title=data['title']
-         return {'webpage_title':title,'transcript':data['text']}
+         return {'webpage_title':title,'input_text':str(data['text'])[0:int(content_length_th)]}
+
+async def input_type_image(state:InvestigationState)->InvestigationState:
+    return state
+
+async def handle_input_type_image(state:InvestigationState) -> InvestigationState:
+    image_url=state['input_text']
+    """
+    Analyze a publicly accessible image URL using Gemini
+    and return its important visible content as text.
+    """
+
+    prompt = """
+You are an image text extraction agent for a misinformation
+and claim assessment system.
+
+Carefully read and understand the provided image.
+
+Extract the important information that is actually visible
+or clearly readable in the image.
+
+1. Do not decide whether the claim is true or false.
+2. Do not add information that is not present in the image.
+3. Do not guess unclear text.
+4. Preserve important names, numbers, dates, and facts accurately.
+5. If some text is unclear, say that it is unclear instead of guessing.
+6. Do not describe irrelevant visual details.
+7. Use simple and clear English.
+8. Keep the result concise but complete.
+
+Return the result in plain english format.
+
+"""
+
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": prompt,
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": image_url,
+                },
+            },
+        ]
+    )
+
+    response = await gemini_llm.ainvoke([message])
+    content_length_th=state['content_length_th']
+    return {'input_text':str(response.content[0]['text'])[0:int(content_length_th)]}
 
 EVENT_EXTRACTION_SYSTEM_PROMPT = """
 You are an analysis-content extraction agent in a misinformation and
@@ -465,23 +523,7 @@ Do not produce a verdict, risk score, fact-checking result, or claim
 classification.
 """
 
-async def event_extrator_from_transcript(state:InvestigationState)->InvestigationState:
-   transcript=state['transcript']
-   prompt=f"""summarize this transcript {transcript}"""
-   result=await groq_llm.ainvoke([
-                    {
-                        "role": "system",
-                        "content": EVENT_EXTRACTION_SYSTEM_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ])
-   result=format_research_output(result.content)
-   return {'input_text':result}
-
-async def event_extrator_from_text(state:InvestigationState)->InvestigationState:
+async def event_extrator_from_input_text(state:InvestigationState)->InvestigationState:
    transcript=state['input_text']
    if(state['input_type']=="text" and len(transcript)>100):
       prompt=f"""summarize this transcript {transcript}"""
@@ -1286,7 +1328,7 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
 
         claim_id = claim["id"]
         claim_text = claim["text"]
-        response=await SEARCH_CHATBOT.ainvoke({'messages':[{'role':'user','content':claim_text}]})
+        response=await SEARCH_CHATBOT.ainvoke({'messages':[{'role':'user','content':claim_text}],'curr':1,'max':3})
         research_agent_report=format_research_output(response)
 
 
@@ -1754,20 +1796,24 @@ graph.add_node("summarize_risk_assessment", summarize_risk_assessment)
 graph.add_node("handling_input_type_url", handling_input_type_url)
 graph.add_node("input_type_is_text", input_type_is_text)
 graph.add_node("input_type_is_url", input_type_is_url)
-graph.add_node("event_extrator_from_transcript", event_extrator_from_transcript)
-graph.add_node("event_extrator_from_text", event_extrator_from_text)
+# graph.add_node("event_extrator_from_transcript", event_extrator_from_transcript)
+graph.add_node("event_extrator_from_input_text", event_extrator_from_input_text)
 graph.add_node("hive_assesment_analysis_worker", hive_assesment_analysis_worker)
+graph.add_node("input_type_image", input_type_image)
+graph.add_node("handle_input_type_image", handle_input_type_image)
 graph.add_node("calc_max_risk_score_and_max_confidence", calc_max_risk_score_and_max_confidence)
 
 
 graph.add_edge(START, "classify_input")
 # graph.add_edge("classify_input","extract_claims")
 graph.add_conditional_edges("classify_input",input_router)
-graph.add_edge("input_type_is_text","event_extrator_from_text")
-graph.add_edge("event_extrator_from_text","extract_claims")
+graph.add_edge("input_type_is_text","event_extrator_from_input_text")
+graph.add_edge("input_type_image","handle_input_type_image")
+graph.add_edge("handle_input_type_image","event_extrator_from_input_text")
+graph.add_edge("event_extrator_from_input_text","extract_claims")
 graph.add_edge("input_type_is_url","handling_input_type_url")
-graph.add_edge("handling_input_type_url","event_extrator_from_transcript")
-graph.add_edge("event_extrator_from_transcript","extract_claims")
+graph.add_edge("handling_input_type_url","event_extrator_from_input_text")
+graph.add_edge("event_extrator_from_input_text","extract_claims")
 graph.add_edge("extract_claims", "finding_eveidence")
 # graph.add_edge("finding_eveidence","hive_text_moderation")
 graph.add_conditional_edges("finding_eveidence",fan_out_evidence_fact,["google_fact_checks_worker"])
@@ -1782,6 +1828,7 @@ graph.add_conditional_edges("claim_assesment",hive_assesment_fanout,["hive_asses
 graph.add_edge("hive_assesment_analysis_worker","Risk_assesment")
 graph.add_edge("Risk_assesment","summarize_claim_assessment")
 graph.add_edge("summarize_claim_assessment","summarize_risk_assessment")
+
 graph.add_edge("summarize_risk_assessment","calc_max_risk_score_and_max_confidence")
 graph.add_edge("calc_max_risk_score_and_max_confidence",END)
 

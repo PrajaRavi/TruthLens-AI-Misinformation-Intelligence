@@ -49,6 +49,7 @@ export function UploadZone({
   formatsLabel,
   icon,
   onFile,
+  
   file,
   preview,
 }: UploadZoneProps) {
@@ -64,10 +65,9 @@ export function UploadZone({
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const f = files[0];
-    const url = URL.createObjectURL(f);
+    // const url = URL.createObjectURL(f);
     // Simulate upload progress (frontend demo).
     setProgress(0);
-    onFile({ file: f, url });
     
 
     /*
@@ -120,6 +120,8 @@ try {
       // setUploadProgress(0)
       // Step D: Successfully set uploaded file details
       setUploadedData(uploadResponse.data);
+      onFile({ file: f, url:uploadResponse.data.url });
+
       console.log(uploadResponse.data)
       
       

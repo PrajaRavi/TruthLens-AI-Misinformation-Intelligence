@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/Card";
 import { UrlType, WebPageDataType, YtDataType } from "./Analyze";
 import MarkdownRenderer from "@/utils/MDRenderer";
+import ContextChatbot from "@/components/ConverChatboat";
 
 // ============================================================
 // TYPES
@@ -1001,23 +1002,42 @@ export function AnalysisDashboard({
       claimPage * ITEMS_PER_PAGE
     );
   const UserContent=()=>{
-    if(input_type=="text"){
-return<>
     
 
- <SummaryCard
-          title="You asked"
-          icon={PersonStanding}
-          summary={title}
-          />
-          </>
+          
 
-    }
-    else if(input_type=="url"){
-<div className="min-w-0 grid-cols-1 max-w-">
-      <UrlPreview  key={`htijfi-120`} url={"https://raviporton.onrender.com"} />
+    
+    if(input_type=="url"){
+      if(YtData?.thumbnail && YtData?.thumbnail!=""){
+        "youtube url"
+        return <div className="min-w-0 grid-cols-1 ">
+          {/* {`title-> ${YtData.title}`} */}
+          
+ 
+      <UrlPreview  key={`htijfi-120`} url={YtData.video_url} />
+      
                                     
     </div>
+}
+else{
+  "webpage url"
+  return <div className="min-w-0 grid-cols-1 max-w-">
+        {/* <h1>{`title-> ${WebPageData.title}`}</h1> */}
+        
+      <UrlPreview  key={`htijfi-120`} url={WebPageData?.webpage_url} />
+                                    
+    </div>
+}
+    }
+    else if(input_type=="image"){
+return <div className="min-w-0 grid-cols-1 max-w-">
+      <UrlPreview  key={`htijfi-120`} url={title} />
+                                    
+    </div>
+    }
+    else{
+      return <p className="bg-red-700 text-white">hello my name{input_type}</p>
+      
     }
     
   }
@@ -1069,11 +1089,17 @@ return<>
   return (
     <div className="space-y-8">
 
-      
+      <ContextChatbot/>
+
       {/* ======================================================
           FINAL RISK ASSESSMENT
       ====================================================== */}
       <section className="space-y-5">
+        <SummaryCard
+          title={`You asked`}
+          icon={PersonStanding}
+          summary={title}
+          />
         <UserContent/>
         <div>
           <h2 className="text-lg font-semibold text-foreground">
