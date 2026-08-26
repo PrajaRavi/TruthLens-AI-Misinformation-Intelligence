@@ -262,7 +262,7 @@ export function AnalyzeClient() {
     // alert("calling")
     const { data, error } = await supabase
       .from("user_input")
-      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail,url_title})
+      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title})
       .select()
       .single(); //now this data contains the newly created row
 
@@ -825,13 +825,15 @@ saveRiskAssessment([
           data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"",null,null);
           
         }
+        else if(tab=="image" || tab=="url"){
 
-        data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url);
-        if(data.length==0){
-          console.log("user input is not saved in DB")
-          return
+          data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url);
         }
         
+        if(data.length==0){
+        console.log("user input is not saved in DB")
+        return
+      }
 
 
         //!  Preparing data for showing in ui after analysis
@@ -871,7 +873,7 @@ saveRiskAssessment([
         if(response.input_type=="youtube"){
           setYtData({thumbnail:response.yt_thumbnail,title:response.webpage_title,video_url:response.input_url})
         }
-        if(response.input_type=="webpage"){
+        else{
           setWebPageData({title:response.webpage_title,webpage_url:response.input_url})
 
         }
@@ -880,7 +882,9 @@ saveRiskAssessment([
         setClaimSummary(response.claim_assessment_summary)
         setRiskSummary(response.risk_assessment_summary)
         setRiskAssesment(response.risk_assessment)
-        setTitle(text)
+        setTitle(response.input_text)
+        
+        
         let urlList1=GetURlList(response.web_evidence)
         let urlList2=GetURlList(response.evidence)
         setUrls([...urlList1,...urlList2])

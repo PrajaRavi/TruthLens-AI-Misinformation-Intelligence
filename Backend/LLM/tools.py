@@ -55,7 +55,7 @@ async def Validate_input(text:str):
   INPUT:
   {input_text}
   """
-  struct_output=groq_llm.with_structured_output(InputValidation)
+  struct_output=groq_llm.with_structured_output(InputValidation,method="json_schema")
   result=await struct_output.ainvoke(validate_input_prompt)
   print("resultof validate input") 
   print(result)

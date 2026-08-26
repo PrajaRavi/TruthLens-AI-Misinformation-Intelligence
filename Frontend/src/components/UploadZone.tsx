@@ -70,7 +70,7 @@ export function UploadZone({
     setProgress(0);
     
 
-    /*
+    
     const timer = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
@@ -80,9 +80,10 @@ export function UploadZone({
         return p + 20;
       });
     }, 80);
-    */
+       
 try {
       // Step A: Fetch authentication parameters from FastAPI backend
+      setIsUploading(true)
       const authResponse = await axios.get<ImageKitAuthResponse>(
         `${FASTAPI_BASE_URL}/api/imagekit-auth`
       );
@@ -201,7 +202,7 @@ try {
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-primary">
         {icon}
       </div>
-      {progress > 0 && progress < 100 ? (
+      {isUploading ? (
         <div className="mt-4 w-full max-w-xs">
           <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div

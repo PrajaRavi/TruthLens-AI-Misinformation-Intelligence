@@ -405,9 +405,11 @@ export function App() {
       let arr=[]
       let highRiskClaims = filterData.length;
       let sum = 0;
+      console.log(data)
       data.forEach((item: any) => {
-        sum += item.confidence;
+        sum += (item.confidence)*100;
       });
+      console.log(sum)
       let averageConfidence = Math.round(sum / data.length);
       let url_data = await fetchUrls(data);
       let sourcesChecked = url_data.length;
@@ -415,7 +417,7 @@ export function App() {
       setdashboardStats({
         totalAnalyses,
         highRiskClaims,
-        averageConfidence: averageConfidence * 100,
+        averageConfidence: averageConfidence,
         sourcesChecked,
       });
     }

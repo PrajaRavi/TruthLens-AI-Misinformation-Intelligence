@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -832,6 +832,11 @@ export function AnalysisDashboard({
   const [riskPage, setRiskPage] = useState(1);
   const [claimPage, setClaimPage] = useState(1);
 
+  useEffect(()=>{
+console.log(risk_assessments)
+console.log(claim_assessment)
+  },[])
+
   // ==========================================================
   // RISK STATISTICS
   // ==========================================================
@@ -1036,7 +1041,7 @@ return <div className="min-w-0 grid-cols-1 max-w-">
     </div>
     }
     else{
-      return <p className="bg-red-700 text-white">hello my name{input_type}</p>
+      // return <p className="bg-red-700 text-white">hello my name{input_type}</p>
       
     }
     

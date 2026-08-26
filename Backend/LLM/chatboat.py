@@ -1130,7 +1130,7 @@ class ClaimAssessmentResult(BaseModel):
 
     contradicting_evidence_count: int
 
-claim_assesment_struc_op=groq_llm2.with_structured_output(ClaimAssessmentResult)
+claim_assesment_struc_op=groq_llm2.with_structured_output(ClaimAssessmentResult,method="json_schema")
 
 CLAIM_ASSESSMENT_SYSTEM_PROMPT = """
 You are an expert fact-checking and claim assessment analyst.
@@ -1510,7 +1510,7 @@ class RiskAssessmentResult(BaseModel):
         description="Brief explanation of why this risk level was assigned"
     )
 
-risk_assesment_struct_output=groq_llm2.with_structured_output(RiskAssessmentResult)
+risk_assesment_struct_output=groq_llm2.with_structured_output(RiskAssessmentResult,method="json_schema")
 
 async def risk_assessment(state:InvestigationState) -> InvestigationState:
     """
