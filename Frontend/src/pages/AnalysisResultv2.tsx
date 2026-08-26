@@ -1031,7 +1031,7 @@ else{
     }
     else if(input_type=="image"){
 return <div className="min-w-0 grid-cols-1 max-w-">
-      <UrlPreview  key={`htijfi-120`} url={title} />
+      <UrlPreview  key={`htijfi-120`} url={WebPageData?.webpage_url} />
                                     
     </div>
     }
