@@ -859,7 +859,7 @@ def fan_out_evidence_web(state:InvestigationState) -> List[Send]:
 
 
 async def search_web_evidence_worker(payload:dict) ->InvestigationState:
-    tavily_tool=TavilySearch(max_results=3,topic="general")
+    tavily_tool=TavilySearch(max_results=2,topic="general")
     print("search_web_evidence start")
     # print(payload)
     claim=payload['claim']
@@ -1399,7 +1399,7 @@ Remember:
     return {"claim_assessment":assessments}
 
 
-
+ 
 
 
 def finding_eveidence(state:InvestigationState):

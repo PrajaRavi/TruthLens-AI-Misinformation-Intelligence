@@ -751,7 +751,7 @@ saveRiskAssessment([
     let validation_msg = await Validate_input(text);
     // return  console.log(validation_msg)
     // console.log(validation_msg);
-    if (validation_msg?.error==true) {
+    if (validation_msg?.error) {
       return toast({
         type: "error",
         title: "InputValidation",

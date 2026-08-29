@@ -56,7 +56,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <ThemeToggle />
 
           <Link
-            href="/analyze"
+            href="/dashboard"
             className="ml-1 hidden h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:inline-flex"
           >
             <Plus className="h-4 w-4" />

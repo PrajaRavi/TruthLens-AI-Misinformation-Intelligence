@@ -25,7 +25,7 @@ from typing import Annotated,Literal
 #! Research chatbot agent
 
 tavily_tool = TavilySearch(
-    max_results=4,
+    max_results=2,
     search_depth="advanced", # "basic" or "advanced"
     
     
@@ -74,7 +74,7 @@ async def chat_node(
     state: AgentState
 ) -> AgentState:
     print(state['curr'],state['max'])
-    if(int(state['curr'])<=int(state['max'])):
+    if(int(state['curr'])>int(state['max'])):
        return state
        
     system_message=SystemMessage(content="act as a helpful and honest virtual assistant")
