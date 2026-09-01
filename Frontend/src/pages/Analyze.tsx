@@ -748,6 +748,7 @@ saveRiskAssessment([
     setText(String(imageFile?.url))
       }
     
+      if(text=="" || text==undefined) return
     let validation_msg = await Validate_input(text);
     // return  console.log(validation_msg)
     // console.log(validation_msg);

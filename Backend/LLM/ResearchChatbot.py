@@ -74,7 +74,7 @@ async def chat_node(
     state: AgentState
 ) -> AgentState:
     print(state['curr'],state['max'])
-    if(int(state['curr'])>=int(state['max'])):
+    if(int(state['curr'])>int(state['max'])):
        return state
        
     system_message=SystemMessage(content="act as a helpful and honest virtual assistant")
