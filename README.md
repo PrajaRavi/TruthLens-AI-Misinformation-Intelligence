@@ -1,4 +1,4 @@
-> ### Project Overview: TruthLenseAI
+> ### Project Overview: TruthLenseAI 🎥🎥👉👉 [Project video](https://ik.imagekit.io/k5imwrh1hh/rag_documents/Screen%20Recording%202026-09-02%20183746.mp4)
 >
 > **What Is It?**
 > TruthLenseAI is an AI-powered platform that helps users check whether information is reliable and understand its possible risk. It can analyze text, images, webpages, and YouTube content by finding evidence from multiple sources before giving an assessment.
