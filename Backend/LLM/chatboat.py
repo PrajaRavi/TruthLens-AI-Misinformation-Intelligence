@@ -70,6 +70,8 @@ class InvestigationState(TypedDict):
     claim_assessment_summary:str|None
     risk_assessment_summary:str|None
     content_length_th:int|None
+    sources_count:Annotated[list[dict],operator.add]
+    claim_count:int|None
     
 
 
@@ -924,7 +926,9 @@ async def evidence_analysis(
     supporting_evidence = []
     contradicting_evidence = []
 
-    for claim in state["claims"]:
+    
+    for claim in state['claims']:
+
 
         claim_text = claim["text"]
 
@@ -938,7 +942,7 @@ async def evidence_analysis(
             source = evidence.get("source", "")
             evidence_claim = evidence.get("claim", "")
             rating = evidence.get("rating", "")
-
+            url = evidence.get("url","")
             prompt = f"""
 You are an evidence analysis system for a fact-checking
 application.
@@ -985,6 +989,7 @@ Return only the structured result.
                 "reason": result.reason,
                 "claim_id":claim['id'],
                 "claim_text": claim_text,
+                "url":url,
                 "evidence_claim":evidence_claim,
                 "user_input_id":state['thread_id']
             }
@@ -1002,6 +1007,7 @@ Return only the structured result.
                 )
 
     print("evidence_analysis ended")
+    # prev_source_count=state['sources_count']
     return {"supporting_evidence":supporting_evidence,"contradicting_evidence":contradicting_evidence}
        
 
@@ -1014,10 +1020,16 @@ async def web_evidence_analysis(state:InvestigationState) -> InvestigationState:
 
     structured_llm = groq_llm2.with_structured_output(EvidenceAnalysis,method="json_schema")
 
+    # print("*"*100)
+    # print(state['claims'])
+        
+
     for evidence_item in web_evidence:
 
-            claim_text = evidence_item.get("claim", "")
+            claim_text = evidence_item.get("claim_text", "")
             content = evidence_item.get("content", "")
+            url = evidence_item.get("url","")
+
             relevance_score = evidence_item.get(
                 "relevance_score",
                 0
@@ -1088,6 +1100,7 @@ Return:
                 "claim_id":evidence_item['claim_id'],
                 "claim_text": claim_text,
                 "evidence_claim":title,
+                "url":url,
                 "user_input_id":state['thread_id']
             }
             
@@ -1105,8 +1118,9 @@ Return:
                  print(analyzed_evidence)
 
     print("web_evidence_analysis end")
+    prev_source_count=state['sources_count']
     return {"supporting_evidence":supporting_evidence,"contradicting_evidence":contradicting_evidence}
-   
+        
 
 class ClaimAssessmentResult(BaseModel):
     
@@ -1329,7 +1343,7 @@ async def claim_assessment(state:InvestigationState) -> InvestigationState:
         claim_id = claim["id"]
         claim_text = claim["text"]
         response=await SEARCH_CHATBOT.ainvoke({'messages':[{'role':'user','content':claim_text}],'curr':1,'max':3})
-        research_agent_report=format_research_output(response)
+        research_agent_report=format_research_output(response['messages'][-1].content)
 
 
         # Evidence supporting this claim
@@ -1392,11 +1406,10 @@ Remember:
             "confidence": result.confidence,
             "reason": result.reason,
             "user_input_id":state['thread_id'],
-            "supporting_evidence_count": len(supporting),
-            "contradicting_evidence_count": len(contradicting)
+            "supporting_evidence_count": supporting,
+            "contradicting_evidence_count":contradicting
         })
-
-    return {"claim_assessment":assessments}
+    return {"claim_assessment":assessments,"sources_count":supporting+contradicting}
 
 
  
@@ -1776,7 +1789,8 @@ def calc_max_risk_score_and_max_confidence(state:InvestigationState)->Investigat
         if(state['risk_assessment'][i]['risk_score']>max_risk_score):
             max_risk_score=state['risk_assessment'][i]['risk_score']
             max_risk_score_level=state['risk_assessment'][i]['risk_level']
-    return {'risk_score':max_risk_score,'risk_level':max_risk_score_level,'confidence':max_confidence}
+   
+    return {'risk_score':max_risk_score,'risk_level':max_risk_score_level,'confidence':max_confidence,"claim_count":len(state['claims'])}
 
 
     

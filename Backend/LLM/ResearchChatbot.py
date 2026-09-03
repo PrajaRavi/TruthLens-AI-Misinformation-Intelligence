@@ -52,6 +52,7 @@ def calculator(first_num:float,second_num:float,operation:str)->dict:
 
 my_tool=[calculator,tavily_tool]
 llm_with_tools=groq_llm.bind_tools(tools=my_tool)
+llm_with_tools1=gemini_llm.bind_tools(tools=my_tool)
 tool_node=ToolNode(tools=my_tool)
 
 class AgentState(TypedDict):
@@ -84,10 +85,15 @@ async def chat_node(
     print(
         "🤖 [Chat Node] Processing user input..."
     )
-
-    response =  await llm_with_tools.ainvoke(
-        messages
-    )
+    response=None
+    if(state['curr']%2!=0):
+        response =  await llm_with_tools.ainvoke(
+            messages
+        )
+    else:
+        response =  await llm_with_tools.ainvoke(
+                     messages
+                 )  
     curr=int(state['curr'])
     
     return {

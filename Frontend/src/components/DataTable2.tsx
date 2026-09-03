@@ -92,7 +92,7 @@ export function DashBoardTableMe({ data }: { data: FactCheckReport[] }) {
       align: "center",
       render: (row) => (
         <span className="font-mono text-xs font-semibold px-2 py-1 rounded bg-surface-2 border border-border">
-          {row.claims.length}
+          {row.claims}
         </span>
       ),
     },

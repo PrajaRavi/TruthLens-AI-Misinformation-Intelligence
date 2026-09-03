@@ -69,7 +69,7 @@ export interface WebPageDataType{
   title:string;
 }
 export function AnalyzeClient() {
-  const {RecentAnalysis,GetuserSignal}=useUser();
+  const {RecentAnalysis,GetuserSignal,claim_map,risk_asses_map}=useUser();
   const searchParams = useSearchParams();
   const presetId = searchParams.get("id");
   const { toast } = useToast();
@@ -116,22 +116,27 @@ export function AnalyzeClient() {
     //! basically when user click on the eye icon in history then using the id of the user_input i have to fetch all the details and have to show on dashboard
     if (presetId) {
       const found = RecentAnalysis.find((a) => a.id === presetId);
-      // if (found) {
+      let temp_claim_assessment=claim_map.get(presetId)
+      let temp_risk_assessment=risk_asses_map.get(presetId)
+      if (found) {
         // setResult(found);
         setStage("results");
         setTitle(String(found?.title))
         
-        setClaimAssessment(found?.claims)
+
+        
+        setClaimAssessment(temp_claim_assessment)
         setClaimSummary(String(found?.claim_summary))
-        setRiskAssesment(found?.risk_assessment)
+        setRiskAssesment(temp_risk_assessment)
         setRiskSummary(String(found?.risk_summary))
-        setUrls(found?.sources)
+        // setUrls(found?.sources)
         setYtData(found?.yt_data)
         setWebPageData(found?.webpage_data)
         setTab(found?.input_type);
-        setSourceUrl(found.url)
+        setSourceUrl(found.sources)
+
         
-      // }
+      }
     }
   }, [presetId]);
 
@@ -194,75 +199,39 @@ export function AnalyzeClient() {
     if (!claims?.length) return;
 
 
-    /*
-
+    
     let filterClaims=claims.map((item:any)=>{
-      return {text:item.text,user_input_id:item.user_input_id}
-    })
-    const { data, error } = await supabase.from("claims").insert(filterClaims);
-
-    if (error) {
-      console.error("Error storing claims:", error);
-      throw error;
-    }
-
-      */
-
-
-     for (let item of claims){
-        let filterClaim={text:item.text,user_input_id:item.user_input_id};
-        let OldClaimId=item.id;// ! This is  the  old id genrated by backend starting from 1
-        const {data,error} = await supabase.from("claims").insert(filterClaim).select().single();
-        if(error){
-          return console.log(error)
+      return {text:item.text,user_input_id:item.user_input_id,claim_id:item.id}
+      })
+      const { data, error } = await supabase.from("claims").insert(filterClaims);
+      
+      if (error) {
+        console.error("Error storing claims:", error);
+        throw error;
         }
+        
 
-        let evidence_filter=evidence.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-
-        let web_evidence_filter=web_evidence.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-
-        let supporting_evidence_filter=supporting_evidence.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-
-        let contradicting_evidence_filter=contradicting_evidence.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-        let claim_assesment_filter=claim_assessment.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-        let hive_assesment_filter=hive_assessment.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-        let risk_assesment_filter=risk_assessment.filter((item:any)=>{
-          return item.claim_id==OldClaimId
-        })
-
+     
         
         
-        await saveEvidence(evidence_filter,data.id)
-        await saveWebEvidence(web_evidence_filter,data.id)
-        await saveContradictingEvidence(contradicting_evidence_filter,data.id)
-        await saveSupportingEvidence(supporting_evidence_filter,data.id)
-        await saveClaimAssessment(claim_assesment_filter,data.id)
-        await saveHiveAssessment(hive_assesment_filter,data.id)
-        await saveRiskAssessment(risk_assesment_filter,data.id)
-     }
-
+        await saveEvidence(evidence)
+        await saveWebEvidence(web_evidence)
+        // await saveContradictingEvidence(contradicting_evidence_filter,data.id)
+        // await saveSupportingEvidence(supporting_evidence_filter,data.id)
+        // await saveHiveAssessment(hive_assesment_filter,data.id)
+        await saveClaimAssessment(claim_assessment)
+        await saveRiskAssessment(risk_assessment)
+     
     return true
   }
 
-  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number,claim_assessment_summary:any[],risk_assessment_summary:any[],url:string,thumbnail:string,url_title:string) {
+  async function saveUserInput(text: string, tab: string, user_id: number,id:string,createdAt:any,risk_score:number,risk_level:string,confidence:number,claim_assessment_summary:string,risk_assessment_summary:string,url:string,thumbnail:string,url_title:string,claim_count:number,sources_count:any[]) {
     if (!text || !tab || !user_id)
       return alert("required fields not found error in saveUserInput!!!!!");
     // alert("calling")
     const { data, error } = await supabase
       .from("user_input")
-      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title})
+      .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title,claim_count,sources_count})
       .select()
       .single(); //now this data contains the newly created row
 
@@ -274,25 +243,39 @@ export function AnalyzeClient() {
     return data;
   }
 
-  async function saveEvidence(evidence: any[],claim_id:string) {
-    if (!evidence?.length) return;
-    let filterdEvidence=evidence.map((item:any)=>{
-      return {
-        "source":item.source,
-        "claim_text":item.claim,
-        "claim_id":claim_id,
-        "rating":item.rating,
-        "url":item.url,
-        "user_input_id":item.user_input_id,
+/** 
+  useEffect(()=>{
+let data=saveUserInput("jeifji","text",1,"34d937a3-5f9d-4004-8245-d34ac9f01b52","2026-08-12 08:47:51.223364+00",45,"LOW",45,"hello","hellobhai","https://raviport.onrender.com","fjidfjidf","difjdifj",4,[
+      {
+        "matching_score": 0.9,
+        "reason": "The fact-check evaluates the claim that drinking alcohol prevents coronavirus infection and rates it false; this directly addresses the user’s claim that alcohol helps defeat the coronavirus, showing the claim is incorrect.",
+        "claim_id": "1",
+        "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
+        "url": "https://factcheck.afp.com/fake-us-hospital-letter-says-alcohol-reduces-covid-19-risks",
+        "evidence_claim": "Drinking alcoholic beverages prevents coronavirus infection",
+        "user_input_id": "string"
+      },
+      {
+        "matching_score": 0.9,
+        "reason": "The fact-checked claim asserts that drinking alcohol prevents COVID-19 infection, which is the same assertion as the user’s claim that alcohol helps defeat the coronavirus. The fact-check rates this claim as misleading, indicating the claim is false, thus it contradicts the user’s claim.",
+        "claim_id": "1",
+        "claim_text": "Drinking alcohol helps to defeat the coronavirus.",
+        "url": "https://www.boomlive.in/health/does-drinking-alcohol-prevent-coronavirus-6935",
+        "evidence_claim": "People who drink alcohol will not be infected by the Coronavirus",
+        "user_input_id": "string"
+      }])
+      console.log(data)
+  },[])
 
-      }
-    })
+  */
+  async function saveEvidence(evidence: any[]) {
+    if (!evidence?.length) return;
 
 
 
     const{ data,error} = await supabase
       .from("google_fact_evidence")
-      .insert(filterdEvidence)
+      .insert(evidence)
     
     if(error){
       console.log(error)
@@ -326,26 +309,14 @@ export function AnalyzeClient() {
     },[])
 
     */
-  async function saveWebEvidence(webEvidence: any[],claim_id:string) {
+  async function saveWebEvidence(webEvidence: any[]) {
     if (!webEvidence?.length) return;
 
 
-    let filterData=webEvidence.map((item:any)=>{
-      return {
-        "source":item.source,
-        "claim_text":item.claim_text,
-        "content":item.content,
-        "url":item.url,
-        "relevance_score":item.relevance_score,
-        "claim_id":claim_id,
-        "user_input_id":item.user_input_id,
-
-      }
-    })
         
     const { data, error } = await supabase
       .from("web_evidence")
-      .insert(filterData);
+      .insert(webEvidence);
 
     if (error) {
       console.error("Error storing web evidence:", error);
@@ -436,19 +407,10 @@ saveSupportingEvidence([
 
   async function saveContradictingEvidence(contradictingEvidence: any[],claim_id:string) {
     if (!contradictingEvidence?.length) return;
-    let filterData=contradictingEvidence.map((item:any)=>{
-      return {
-        "matching_score":item.matching_score,
-        "reason":item.reason,
-        "claim_id":claim_id,
-        "claim_text":item.claim_text,
-        "evidence_claim":item.evidence_claim,
-        "user_input_id":item.user_input_id,
-      }
-    })
+    
     const { data, error } = await supabase
       .from("contradicting_evidence")
-      .insert(filterData);
+      .insert(contradictingEvidence);
 
     if (error) {
       console.error("Error storing contradicting evidence:", error);
@@ -468,23 +430,12 @@ if(data.length==0) return []
 
 
 
-  async function saveClaimAssessment(claimAssessment: any[],claim_id:string) {
+  async function saveClaimAssessment(claimAssessment: any[]) {
     if (!claimAssessment?.length) return;
-    let filterData=claimAssessment.map((item:any)=>{
-      return {
-        "claim_id":claim_id,
-        "claim_text":item.claim_text,
-        "verdict":item.verdict,
-        "confidence":item.confidence,
-        "reason":item.reason,
-        "supporting_evidence_count":item.supporting_evidence_count,
-        "contradicting_evidence_count":item.contradicting_evidence_count,
-        "user_input_id":item.user_input_id,
-      }
-    })
+    
     const { data, error } = await supabase
       .from("claim_assessment")
-      .insert(filterData);
+      .insert(claimAssessment);
 
     if (error) {
       console.error("Error storing claim assessment:", error);
@@ -560,21 +511,12 @@ saveClaimAssessment([
 
  */
 
-  async function saveRiskAssessment(riskAssessment: any[],claim_id:string) {
+  async function saveRiskAssessment(riskAssessment: any[]) {
     if (!riskAssessment?.length) return;
-    let filterData=riskAssessment.map((item)=>{
-      return {
-      "claim_id":claim_id,
-      "claim_text":item.claim_text,
-      "risk_level":item.risk_level,
-      "risk_score":item.risk_score,
-      "reason":item.reason,
-      "user_input_id":item.user_input_id,
-      }
-    })
+    
     const { data, error } = await supabase
       .from("risk_assessment")
-      .insert(filterData);
+      .insert(riskAssessment);
 
     if (error) {
       console.error("Error storing risk assessment:", error);
@@ -823,12 +765,12 @@ saveRiskAssessment([
         if(tab=="text"){
           //! in the case of text only i have to save user input before calling the research api
           //! in case of url,image,audio we have to store url and as well as the text content so we will store userinput after api call
-          data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"",null,null);
+          data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"","","",response.claim_count,response.sources_count);
           
         }
         else if(tab=="image" || tab=="url"){
 
-          data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url);
+          data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url,response.claim_count,response.sources_count);
         }
         
         if(data.length==0){
@@ -861,15 +803,15 @@ saveRiskAssessment([
         //! category->coming soon
 
         // preparing cliam assessment
-        let filterClaim=response.claim_assessment.map((item:any)=>{
-          let supporting_evidence=response.supporting_evidence.filter((item_new:any)=>{
-            return item.claim_id==item_new.claim_id
-          })
-          let contradicting_evidence=response.contradicting_evidence.filter((item_new:any)=>{
-            return item.claim_id==item_new.claim_id
-          })
-          return {...item,supporting_evidence,contradicting_evidence}
-        })
+        // let filterClaim=response.claim_assessment.map((item:any)=>{
+        //   let supporting_evidence=response.supporting_evidence.filter((item_new:any)=>{
+        //     return item.claim_id==item_new.claim_id
+        //   })
+        //   let contradicting_evidence=response.contradicting_evidence.filter((item_new:any)=>{
+        //     return item.claim_id==item_new.claim_id
+        //   })
+        //   return {...item,supporting_evidence,contradicting_evidence}
+        // })
 
         if(response.input_type=="youtube"){
           setYtData({thumbnail:response.yt_thumbnail,title:response.webpage_title,video_url:response.input_url})
@@ -879,11 +821,12 @@ saveRiskAssessment([
 
         }
         
-        setClaimAssessment(filterClaim)
+        setClaimAssessment(response.claim_assessment)
         setClaimSummary(response.claim_assessment_summary)
         setRiskSummary(response.risk_assessment_summary)
         setRiskAssesment(response.risk_assessment)
         setTitle(response.input_text)
+        setSourceUrl(response.sources_count)
         
         
         let urlList1=GetURlList(response.web_evidence)
@@ -987,7 +930,7 @@ saveRiskAssessment([
             </Button>
           }
         /> */}
-        <AnalysisDashboard YtData={YtData} WebPageData={WebPageData} input_type={tab} title={Title} claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={Urls}/>
+        <AnalysisDashboard YtData={YtData} WebPageData={WebPageData} input_type={tab} title={Title} claim_summary={ClaimSummary} risk_summary={RiskSummary} claim_assessment={ClaimAssessment} risk_assessments={RiskAssesment} urls={SourceUrl}/>
       </div>
     );
   }

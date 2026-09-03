@@ -11,6 +11,7 @@ from langchain_ollama import OllamaEmbeddings
 from fastapi.responses import JSONResponse
 from fastapi import Query,status
 from imagekitio import ImageKit
+from LLM.ResearchChatbot import SEARCH_CHATBOT
 from LLM.tools import Validate_input
 
 from LLM.chatboat import AGENT
@@ -59,12 +60,20 @@ async def hello(input:ValidateInput):
 def hello():
   return JSONResponse({'success':'true','msg':"All is well!!!!!! 😊😊😊😊😊🤣🤣🤣🤣🤣"})
 
+@app.get("/api/research_chatbot")
+async def hello(claim_text:str):
+  # return {'just':claim_text}
+  response=await SEARCH_CHATBOT.ainvoke({'messages':[{'role':'user','content':claim_text}],'curr':1,'max':3})
+  print(response['messages'][-1].content)
+  return JSONResponse({'success':'true','msg':response['messages'][-1].content})
+          
+
 
 @app.post("/api/research")
 async def hello(input:ResearchBody):
   print(input)
   try:
-     final_result=await AGENT.ainvoke({'input_text':input.input,'input_type':input.type,'thread_id':input.thread_id,"content_length_th":200},config={'configurable':{'thread_id':input.thread_id}})
+     final_result=await AGENT.ainvoke({'input_text':input.input,'input_type':input.type,'thread_id':input.thread_id,"content_length_th":200,"th":0.75},config={'configurable':{'thread_id':input.thread_id}})
      if(final_result):
        return JSONResponse({'success':'true','msg':final_result})
      else:

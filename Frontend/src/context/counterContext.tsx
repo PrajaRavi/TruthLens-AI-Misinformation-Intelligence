@@ -17,6 +17,8 @@ export interface UserContextType {
   RecentAnalysis:FactCheckReport[];
   setRecentAnalysis:Dispatch<SetStateAction<FactCheckReport[]>>;
   GlobalLoadingState:boolean
+  claim_map:Map<string, any[]>;
+  risk_asses_map:Map<string, any[]>;
 }
 
 // Create the context with an initial value of undefined

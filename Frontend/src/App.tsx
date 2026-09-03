@@ -15,7 +15,7 @@ import Signup, { DataPoint, sampleFactCheckData } from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import { supabase } from "./utils/supabase";
-import { localUser } from "./lib/constants";
+import { AnalysisData, localUser } from "./lib/constants";
 import { useContext, useEffect, useState } from "react";
 import { UserContext, User } from "./context/counterContext";
 import Landing from "./pages/Landing";
@@ -25,6 +25,7 @@ import { DashboardStats, RiskDistribution } from "./types";
 import { formatDate } from "./lib/utils";
 import { KeyObject } from "crypto";
 import { FactCheckReport } from "./components/DataTable2";
+import { json } from "stream/consumers";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -143,6 +144,9 @@ export function App() {
     user_input_id: string,
   ): Promise<FetchUrlFromWebEvidenceReturnType> {
     try {
+
+      "returns extracted url from each evidence and also the overall web evidences"
+
       let urls: string[] = [];
       let { data, error }: { data: any; error: any } = await supabase
         .from("web_evidence")
@@ -213,6 +217,7 @@ export function App() {
     console.log(data);
     
     */
+   console.log(data)
     try {
       let urls: string[] = [];
       if (data.length == 0) return [];
@@ -224,17 +229,25 @@ export function App() {
       let high = 0;
       let critical = 0;
       let RecentAnalysisArr: FactCheckReport[] = [];
-
+      
+      
       for (let item of data) {
 
         //! fetching all the risk_assessment of a particular user_input_id
         let risk_asssment_data = await fetchAllRiskAssesmentBy_user_input_id(item.id);
         risk_asses_map.set(item.id, risk_asssment_data);
+        
+
 
         let claim_assessment_data = await FetchClaimAssessment(item.id);
+        claim_map.set(item.id,claim_assessment_data)
+        
+
+        /*
         let supporting_evidence = [];
         let contradicting_evidence = [];
-        let MyClaimObjectArr = [];
+        let MyClaimObjectArr:any[] = [];
+        
 
         for (let item1 of claim_assessment_data) {
           if (item1.supporting_evidence_count != 0) {
@@ -261,11 +274,10 @@ export function App() {
           MyClaimObjectArr.push(MyClaimObject);
         }
 
-        /*
 
 
       */
-        claim_map.set(item.id, MyClaimObjectArr);
+        // claim_map.set(item.id, MyClaimObjectArr);
 
         console.log(low, high, moderate, critical);
         const formattedDate = item.created_at.split(" ")[0];
@@ -285,6 +297,7 @@ export function App() {
         } else if (item.risk_level == "CRITICAL") {
           critical += 1;
         }
+        /*
 
         let result: FetchUrlFromWebEvidenceReturnType =
           await FetchUrlFromWebEvidence(item.id);
@@ -316,7 +329,7 @@ export function App() {
             }
           }
         }
-
+*/
         const formatDate = (dateString: string) => {
           if (!dateString) return "";
           const date = new Date(dateString);
@@ -339,18 +352,18 @@ export function App() {
           risk_summary:item.risk_assessment_summary,
           webpage_data:{title:item.url_title,webpage_url:item.url},
           yt_data:{thumbnail:item.thumbnail,title:item.url_title,video_url:item.url},
-
+          
           
           confidence: item.confidence,
           date: formatDate(formattedDate),
-          sources: [...Websources, ...Factsources],
-          claims: MyClaimObjectArr,
-          risk_assessment: risk_asssment_data,
+          // sources: [...Websources, ...Factsources],
+          sources: item?.sources_count,
+          claims: item?.claim_count,
+          // risk_assessment: [],
         };
         console.log(RecentAnalysisObj);
         RecentAnalysisArr.push(RecentAnalysisObj);
       }
-
       
       setRecentAnalysis(RecentAnalysisArr);
 
@@ -378,47 +391,67 @@ export function App() {
   }
 
   async function fetchAllUserInput(userid: number) {
-    let { data, error }: { data: any; error: any } = await supabase
+    let result=[];
+    // let error="";
+    // alert(localStorage.getItem(AnalysisData)=="undefined")
+    // if(localStorage.getItem(AnalysisData)){
+    //   result=JSON.parse(localStorage.getItem(AnalysisData))
+    // }
+    // else{
+
+      // alert("chal")
+      let { data, error }: { data: any; error: any } = await supabase
       .from("user_input")
       .select("*")
       .eq("user_id", userid);
-
-    if (data?.length == 0) {
-      toast({
-        type: "error",
-        title: "Nothing",
-        description: "user input is empty",
-      });
-    } else if (error) {
+      result=data;
+      error=error;
+      localStorage.setItem(AnalysisData,JSON.stringify(data))
+      
+    // }
+    console.log(result)
+    if (error) {
+      
       console.log(error);
-      toast({
+      return toast({
         type: "error",
         title: "Nothing",
         description: "something went wrong in fetchAllUserInput ",
       });
-    } else {
-      setAllUserInputId(data);
-      let totalAnalyses = data.length;
-      let filterData = data.filter((item: any) => {
+    }
+    console.log("print result")
+    console.log(result)
+      if (result?.length == 0) {
+        toast({
+        type: "error",
+        title: "Nothing",
+        description: "user input is empty",
+      });
+    } 
+    else {
+      setAllUserInputId(result);
+      let totalAnalyses = result.length;
+      let filterData = result.filter((item: any) => {
         return item.risk_level == "HIGH";
       });
       let arr=[]
       let highRiskClaims = filterData.length;
       let sum = 0;
-      console.log(data)
-      data.forEach((item: any) => {
+      console.log(result)
+      let source_checked=0
+      result.forEach((item: any) => {
+        source_checked+=item?.sources_count?.length;
         sum += (item.confidence)*100;
       });
       console.log(sum)
-      let averageConfidence = Math.round(sum / data.length);
-      let url_data = await fetchUrls(data);
-      let sourcesChecked = url_data.length;
-
+      let averageConfidence = Math.round(sum / result.length);
+      let url_data = await fetchUrls(result);
+      
       setdashboardStats({
         totalAnalyses,
         highRiskClaims,
         averageConfidence: averageConfidence,
-        sourcesChecked,
+        sourcesChecked:source_checked,
       });
     }
   }
@@ -439,6 +472,8 @@ export function App() {
         RecentAnalysis,
         setRecentAnalysis,
         GlobalLoadingState,
+        claim_map,
+        risk_asses_map
       }}
     >
       <ThemeProvider>

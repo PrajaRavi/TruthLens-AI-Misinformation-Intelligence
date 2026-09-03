@@ -689,14 +689,14 @@ function ClaimAssessmentItem({
                           <div className="grid gap-4 lg:grid-cols-2">
                             <EvidenceGroup
                               title="Supporting evidence"
-                              items={assessment.supporting_evidence}
+                              items={assessment.supporting_evidence_count}
                               positive
                             />
                               
     
                             <EvidenceGroup
                               title="Contradicting evidence"
-                              items={assessment.contradicting_evidence}
+                              items={assessment.contradicting_evidence_count}
                               positive={false}
                             />
                           </div>
@@ -707,7 +707,7 @@ function ClaimAssessmentItem({
                                   <h2 className="text-lg font-semibold">Referenced URLs</h2>
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
-                                  {urls.map((url, index) => (
+                                  {urls?.length>0 && urls.map((url, index) => (
                                     <span className={url.claim_id==assessment.claim_id?"block min-w-0":"hidden"}>
 
                                     <UrlPreview  key={`${url}-${index}`} url={url.url} />

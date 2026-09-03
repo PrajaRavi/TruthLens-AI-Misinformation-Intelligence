@@ -115,4 +115,5 @@ export const INPUT_TYPE_LABELS: Record<InputType, string> = {
 
 export const DISCLAIMER_TEXT =
   "AI-generated assessments are probabilistic and should not be treated as definitive proof. Review the cited evidence and original sources before making important decisions.";
-export const localUser="mynameisravi"
+export const localUser="mynameisravi";
+export const AnalysisData="ImplementingCacheForAnalysisData";
