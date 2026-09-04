@@ -1,0 +1,125 @@
+[33mcommit f92d8d4a56c968a5a4be1f8467faa44b4d19a3bb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mversion3[m[33m, [m[1;31morigin/version3[m[33m)[m
+Author: Amit Prajapati <you@example.com>
+Date:   Thu Sep 3 12:15:19 2026 +0530
+
+    database design changed and incresing loding speed
+
+[33mcommit 3518cb05f5bc8fbd37ee5fb90efa0e7b7189f1d2[m[33m ([m[1;31morigin/version2[m[33m)[m
+Author: Amit Prajapati <you@example.com>
+Date:   Wed Sep 2 18:51:12 2026 +0530
+
+    added project video in readme
+
+[33mcommit 1fdbeb1b8ce08cc62bc65d9e398cfd0222122df1[m
+Author: Amit Prajapati <you@example.com>
+Date:   Tue Sep 1 20:42:21 2026 +0530
+
+    all done for internal hackathon
+
+[33mcommit bb6907b68740e42090b66267c4ad8a0dd93f2f96[m
+Author: Amit Prajapati <you@example.com>
+Date:   Tue Sep 1 20:11:38 2026 +0530
+
+    bug fixing
+
+[33mcommit b73f90eb718075819b5ff0012b643dc576b3deb4[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sat Aug 29 21:57:42 2026 +0530
+
+    fixed bug inside ResearchChatboat
+
+[33mcommit a7ff75853d481deeecfeb71ec5e815f4ab14c7c1[m
+Author: Amit Prajapati <you@example.com>
+Date:   Wed Aug 26 19:36:46 2026 +0530
+
+    fixed some bugs
+
+[33mcommit 0957f5c5b29d6eae575f02592e31cb2f101f10d1[m
+Author: Amit Prajapati <you@example.com>
+Date:   Wed Aug 26 18:03:45 2026 +0530
+
+    added main readme.md file
+
+[33mcommit e11e137d5e03f175f6404badc3f76174a0615682[m
+Author: Amit Prajapati <you@example.com>
+Date:   Wed Aug 26 07:02:45 2026 +0530
+
+    all is done  for internal hackathon
+
+[33mcommit 79af183c070d437101a06cd4ede8ef23b4fb79fb[m
+Author: Amit Prajapati <you@example.com>
+Date:   Tue Aug 25 19:31:16 2026 +0530
+
+    image,url handelling done now next i just have to scale it for larger text content
+
+[33mcommit 8497bbbda9178f5392ad6e08ef2ecd4cbf0014c1[m
+Author: Amit Prajapati <you@example.com>
+Date:   Mon Aug 24 19:51:13 2026 +0530
+
+    image analysis started
+
+[33mcommit 7596d0c0162c151083c72c5c600653c2c853f447[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sun Aug 23 20:24:21 2026 +0530
+
+    yt_video_shorts webpage analysis done
+
+[33mcommit 87ea725c5a9c0c84208c0589515edf336310d9eb[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sun Aug 23 10:56:35 2026 +0530
+
+    updated backend readme
+
+[33mcommit 9d24d8774ac863ced7cac5223204a6a30833fc7b[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sun Aug 23 10:51:20 2026 +0530
+
+    handling large text content
+
+[33mcommit 14e248d31d37f93c444dfb6aa9b5805affbc44f0[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sun Aug 23 09:51:49 2026 +0530
+
+    finally dashboard summary looks good
+
+[33mcommit 1a7e405ff8bc7e54cba53b983a753cd97acc67f5[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sun Aug 23 08:07:46 2026 +0530
+
+    finally analysisResult dashboard probme is solved
+
+[33mcommit 647698a14ad14cbb2af5e67598226e11cabc15e5[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sat Aug 22 20:08:30 2026 +0530
+
+    just started v2
+
+[33mcommit 196df6274f992b6555a8724238a283086a2aba5f[m[33m ([m[1;31morigin/version1[m[33m)[m
+Author: Amit Prajapati <you@example.com>
+Date:   Sat Aug 22 08:08:03 2026 +0530
+
+    fixed duplicate evidence bug
+
+[33mcommit 174e86f7636759f1bcf22deb652f8e329f6843d6[m
+Author: Amit Prajapati <you@example.com>
+Date:   Fri Aug 21 21:51:37 2026 +0530
+
+    version1 done finally
+
+[33mcommit 16a7011ac5b3974f9446859e4a2ce83a2d985651[m
+Author: Amit Prajapati <you@example.com>
+Date:   Thu Aug 20 11:53:38 2026 +0530
+
+    version1 completed
+
+[33mcommit ba58084a798ae76c2a255e70298646f9e17f7021[m
+Author: Amit Prajapati <you@example.com>
+Date:   Wed Aug 19 22:02:01 2026 +0530
+
+    solved the 400 error automatic tool calling without any tool binding this is due to with_structured_output
+
+[33mcommit 7bd227533e5077691338b48e2ab8449edbab201b[m
+Author: Amit Prajapati <you@example.com>
+Date:   Tue Aug 18 19:39:47 2026 +0530
+
+    dashboard ka kam chal raha hai

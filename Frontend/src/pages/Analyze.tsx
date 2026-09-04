@@ -1,6 +1,7 @@
 // https://youtube.com/shorts/wJ1F_Qvo7a4?si=rAcpEM-nhPAeUHEx
 // https://i.ytimg.com/vi/O4LqCxB5XZc/maxresdefault.jpg
 // https://ik.imagekit.io/k5imwrh1hh/rag_documents/Codex_Image_Aug_21__2026__09_20_55_PM_AmNXaAPVW.png
+// uvicorn main_new:app --reload
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "@/router";
 import {
@@ -31,9 +32,9 @@ import axios from "axios";
 import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
-import { ApiAnalysisResult } from "@/components/MyAnalysisResult";
-import { AnalysisResult2, ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
+import {  ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
 import { AnalysisDashboard } from "./AnalysisResultv2";
+import { AnalysisData } from "@/lib/constants";
 export interface UrlType{
   url:string;
   claim_id:string;
@@ -134,6 +135,9 @@ export function AnalyzeClient() {
         setWebPageData(found?.webpage_data)
         setTab(found?.input_type);
         setSourceUrl(found.sources)
+        let obj={title:found.title,claim_assessment:temp_claim_assessment,risk_assessment:temp_risk_assessment,claim_assessment_summary:found?.claim_summary,risk_assessment_summary:found?.risk_summary,sources_count:found.sources}
+
+        
 
         
       }
@@ -143,6 +147,7 @@ export function AnalyzeClient() {
   useEffect(() => {
     return () => timers.current.forEach(clearTimeout);
   }, []);
+
 
   const canAnalyze = useMemo(() => {
     switch (tab) {
@@ -234,7 +239,10 @@ export function AnalyzeClient() {
       .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title,claim_count,sources_count})
       .select()
       .single(); //now this data contains the newly created row
-
+  let prevCachedData=JSON.parse(localStorage.getItem(AnalysisData));
+  prevCachedData.push({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title,claim_count,sources_count});
+    localStorage.setItem(AnalysisData,JSON.stringify(prevCachedData))
+  
     if (error) {
       console.error("Error storing claims:", error);
       throw error;

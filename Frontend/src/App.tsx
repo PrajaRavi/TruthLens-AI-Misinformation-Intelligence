@@ -1,31 +1,41 @@
+import { lazy, Suspense, useContext, useEffect, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme";
 import { ToastProvider, useToast } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
-import Dashboard from "@/pages/Dashboard";
+// import Dashboard from "@/pages/Dashboard";
 import { AnalyzeClient, UrlType } from "@/pages/Analyze";
-import Claims from "@/pages/Claims";
-import History from "@/pages/History";
-import Insights from "@/pages/Insights";
-import Reports from "@/pages/Reports";
-import Settings from "@/pages/Settings";
-import Sources from "@/pages/Sources";
-import Login from "@/pages/Login";
-import Signup, { DataPoint, sampleFactCheckData } from "@/pages/Signup";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
+const Dashboard=lazy(()=>import("@/pages/Dashboard"))
+// import Claims from "@/pages/Claims";
+const Claims=lazy(()=>import("@/pages/Claims"))
+const History=lazy(()=>import("@/pages/History"))
+// import History from "@/pages/History";
+// import Insights from "@/pages/Insights";
+const Insights=lazy(()=>import("@/pages/Insights"))
+// import Reports from "@/pages/Reports";
+const Reports=lazy(()=>import("@/pages/Reports"))
+// import Settings from "@/pages/Settings";
+const Settings=lazy(()=>import("@/pages/Settings"))
+// import Sources from "@/pages/Sources";
+const Sources=lazy(()=>import("@/pages/Sources"))
+// import Login from "@/pages/Login";
+const Login=lazy(()=>import("@/pages/Login"))
+const Signup=lazy(()=>import("@/pages/Signup"))
+import { DataPoint, sampleFactCheckData } from "@/pages/Signup";
+// import ForgotPassword from "@/pages/ForgotPassword";
+const ForgotPassword=lazy(()=>import("@/pages/ForgotPassword"))
+// import ResetPassword from "@/pages/ResetPassword";
+const ResetPassword=lazy(()=>import("@/pages/ResetPassword"))
 import { supabase } from "./utils/supabase";
 import { AnalysisData, localUser } from "./lib/constants";
-import { useContext, useEffect, useState } from "react";
 import { UserContext, User } from "./context/counterContext";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/Error";
 import { PrivateComponent } from "./components/PrivateComp";
 import { DashboardStats, RiskDistribution } from "./types";
-import { formatDate } from "./lib/utils";
-import { KeyObject } from "crypto";
 import { FactCheckReport } from "./components/DataTable2";
-import { json } from "stream/consumers";
+import FullScreenLoader from "./pages/FetchUserLoading";
+import axios from "axios";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -392,12 +402,13 @@ export function App() {
 
   async function fetchAllUserInput(userid: number) {
     let result=[];
-    // let error="";
+    let error="";
     // alert(localStorage.getItem(AnalysisData)=="undefined")
-    // if(localStorage.getItem(AnalysisData)){
-    //   result=JSON.parse(localStorage.getItem(AnalysisData))
-    // }
-    // else{
+    if(localStorage.getItem(AnalysisData)){
+      // alert("hii")
+      result=JSON.parse(localStorage.getItem(AnalysisData))
+    }
+    else{
 
       // alert("chal")
       let { data, error }: { data: any; error: any } = await supabase
@@ -408,7 +419,7 @@ export function App() {
       error=error;
       localStorage.setItem(AnalysisData,JSON.stringify(data))
       
-    // }
+    }
     console.log(result)
     if (error) {
       
@@ -456,8 +467,19 @@ export function App() {
     }
   }
 
+  async function feed_data_to_analysis_assistant(){
+    try {
+      let obj={name:"ravi",id:4,surname:"prajapati"}
+      let {data}=await axios.post("http://localhost:8000/api/feed_data_to_analysis_assistant",{msg:JSON.stringify(obj)})
+      console.log(data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   useEffect(() => {
     if (localStorage.getItem(localUser)) {
+      // Ravi()
       GetUser();
     }
   }, [GetuserSignal]);
@@ -478,15 +500,9 @@ export function App() {
     >
       <ThemeProvider>
         <ToastProvider>
+          <Suspense fallback={<FullScreenLoader/>}>
+
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<Landing />} />
-
-            <Route element={<PrivateComponent />}>
               <Route
                 path="/dashboard"
                 element={
@@ -500,6 +516,14 @@ export function App() {
                   </DashboardLayout>
                 }
               />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/" element={<Landing />} />
+
+            <Route element={<PrivateComponent />}>
               <Route
                 path="/analyze"
                 element={
@@ -559,6 +583,7 @@ export function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </Suspense>
         </ToastProvider>
       </ThemeProvider>
     </UserContext.Provider>

@@ -54,6 +54,8 @@ class ClaimsOutput(BaseModel):
     claims: list[Claim]
 
 
+
+
 class InvestigationState(TypedDict):
 
     # ─────────────────────────────
@@ -64,6 +66,7 @@ class InvestigationState(TypedDict):
     th:float #! between 0 and 1
     user_id: str
     thread_id: str #! this will act as user_input_id inside each field
+    category:Literal["GENRAL","HEALTH","POLITICS","CLIMATE","FINANCE","TECHNOLOGY","FINANACE","SICENCE","SOCIAL MEDIA","BREAKING NEWS"]=Field(description="This is going to tell in which category the content recides",default="genral")
 
     #!summary considering all the feilds of every object
     
@@ -258,7 +261,7 @@ async def extract_webpage_content(url: str) -> dict:
         )
 
 
-    
+
 async def classify_input(state:InvestigationState) ->InvestigationState:
     print('running classify input')
     """
@@ -546,7 +549,9 @@ async def event_extrator_from_input_text(state:InvestigationState)->Investigatio
   
 
 
-
+async def Assign_category(state:InvestigationState) -> InvestigationState:
+    "This node is just going to assign a category to the content"
+    pass
 async def extract_claims(state:InvestigationState) -> InvestigationState:
 
     # input_text = state["input_text"]

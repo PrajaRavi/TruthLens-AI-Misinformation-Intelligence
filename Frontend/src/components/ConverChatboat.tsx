@@ -8,6 +8,8 @@ import {
   User,
   Sparkles,
 } from "lucide-react";
+import axios from "axios";
+import MarkdownRenderer from "@/utils/MDRenderer";
 
 interface Message {
   id: number;
@@ -16,7 +18,7 @@ interface Message {
 }
 
 interface ContextChatbotProps {
-  analysisContext?: string;
+  analysisContext?: any;
 }
 
 const demoResponses = [
@@ -33,6 +35,8 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  let [AnalysisChatBoatFeedDataLoading,setAnalysisChatBoatFeedDataLoading]=useState<boolean>(false)
+  
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -45,6 +49,35 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+async function feed_data_to_analysis_assistant(){
+    try {
+      let AIMsg:Message={content:"",id:0,role:"assistant"}
+      setIsTyping(true)
+      // let obj={name:"ravi",id:4,surname:"prajapati"}
+      let {data}=await axios.post("http://localhost:8000/api/chat_with_analysis_assistant",{analysis_data:JSON.stringify
+        (analysisContext),query:input})
+      if(data?.success){
+
+        console.log(data)
+        AIMsg= {
+          id: Date.now(),
+          role: "assistant",
+          content: data?.msg,
+        }
+    }
+    else{
+      console.log("something went wrong in feed_data_to_analysis_assistant")
+    }
+
+    setMessages((prev) => [...prev, AIMsg]);
+    
+
+    } catch (error) {
+      console.log(error)
+    }finally{
+      setIsTyping(false)
+    }
+  }
 
   /* -----------------------------
      Auto scroll
@@ -69,6 +102,8 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
       alert("Speech recognition is not supported in this browser.");
       return;
     }
+
+    
 
     const recognition = new SpeechRecognition();
 
@@ -121,6 +156,7 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
   ----------------------------- */
 
   const sendMessage = async () => {
+    console.log(analysisContext)
     const message = input.trim();
 
     if (!message || isTyping) return;
@@ -151,22 +187,22 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
 
       const data = await response.json();
     */
+await feed_data_to_analysis_assistant()
+    // setTimeout(() => {
+    //   const randomResponse =
+    //     demoResponses[
+    //       Math.floor(Math.random() * demoResponses.length)
+    //     ];
 
-    setTimeout(() => {
-      const randomResponse =
-        demoResponses[
-          Math.floor(Math.random() * demoResponses.length)
-        ];
+    //   const assistantMessage: Message = {
+    //     id: Date.now() + 1,
+    //     role: "assistant",
+    //     content: randomResponse,
+    //   };
 
-      const assistantMessage: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: randomResponse,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1200);
+    //   setMessages((prev) => [...prev, assistantMessage]);
+    //   setIsTyping(false);
+    // }, 1200);
   };
 
   /* -----------------------------
@@ -395,15 +431,16 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
                       px-3
                       py-2.5
                       text-sm
+                      
                       leading-relaxed
                       ${
                         message.role === "user"
-                          ? "rounded-tr-sm bg-[#7678EF] text-white"
-                          : "rounded-tl-sm bg-gray-100 text-gray-800"
+                          ? "rounded-tr-sm bg-[#7678EF] "
+                          : "rounded-tl-sm bg-gray-100 dark:bg-[#37366d]"
                       }
                     `}
                   >
-                    {message.content}
+                    <MarkdownRenderer content={message.content} />
                   </div>
                 </div>
               </div>

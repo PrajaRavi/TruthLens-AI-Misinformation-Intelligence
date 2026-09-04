@@ -826,13 +826,16 @@ export function AnalysisDashboard({
   YtData,
   WebPageData
 }: AnalysisDashboardProps) {
+let obj={title:title,claim_assessment:claim_assessment,risk_assessment:risk_assessments,claim_assessment_summary:claim_summary,risk_assessment_summary:risk_summary,sources_count:urls}
 
   const ITEMS_PER_PAGE = 2;
 
   const [riskPage, setRiskPage] = useState(1);
   const [claimPage, setClaimPage] = useState(1);
+  let [AnalysisData,setAnalysisData]=useState(obj)
 
   useEffect(()=>{
+    setAnalysisData({title:title,claim_assessment:claim_assessment,risk_assessment:risk_assessments,claim_assessment_summary:claim_summary,risk_assessment_summary:risk_summary,sources_count:urls})
 console.log(risk_assessments)
 console.log(claim_assessment)
   },[])
@@ -1094,7 +1097,7 @@ return <div className="min-w-0 grid-cols-1 max-w-">
   return (
     <div className="space-y-8">
 
-      <ContextChatbot/>
+      <ContextChatbot analysisContext={AnalysisData}/>
 
       {/* ======================================================
           FINAL RISK ASSESSMENT
