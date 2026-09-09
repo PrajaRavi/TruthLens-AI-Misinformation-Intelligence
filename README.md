@@ -208,3 +208,25 @@ sih_52
 └─ yu.py
 
 ```
+
+```text
+
+Claim
+  │
+  ▼
+Claim Type
+  │
+  ├── Medical ──────► WHO + CDC + PubMed
+  │
+  ├── Scientific ───► PubMed + OpenAlex + Semantic Scholar
+  │
+  ├── Person ───────► Official institution + news + Wikipedia
+  │
+  ├── Government ───► Government websites
+  │
+  └── General ──────► Fact Check + Web
+```
+> https://newsapi.org/v2/everything?q=apple&from=2026-09-08&to=2026-09-08&sortBy=popularity&apiKey=nothing for everything
+
+> https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=nothing top headlines
+ 

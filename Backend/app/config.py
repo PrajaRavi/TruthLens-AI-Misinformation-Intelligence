@@ -39,6 +39,10 @@ class Settings:
     TAVILY_API_KEY=os.getenv("TAVILY_API_KEY")
     TAVILY_FALLBACK_API_KEY=os.getenv("TAVILY_FALLBACK_API_KEY")
 
+    # --- NEWS API ---
+    NEWS_API_KEY=os.getenv("NEWS_API_KEY")
+    # TAVILY_FALLBACK_API_KEY=os.getenv("TAVILY_FALLBACK_API_KEY")
+
     # --- HIVE API ---
     HIVE_API_KEY=os.getenv("HIVE_API_KEY")
 

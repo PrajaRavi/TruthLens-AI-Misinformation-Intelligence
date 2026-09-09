@@ -32,7 +32,7 @@ class InvestigationState(TypedDict):
     th:float #! between 0 and 1
     user_id: str
     thread_id: str #! this will act as user_input_id inside each field
-    category:Literal["GENRAL","HEALTH","POLITICS","CLIMATE","FINANCE","TECHNOLOGY","FINANACE","SCIENCE","SOCIAL MEDIA","BREAKING NEWS"]=Field(description="This is going to tell in which category the content recides",default="genral")
+    category:Literal["GENRAL","HEALTH","POLITICS","CLIMATE","FINANCE","TECHNOLOGY","SCIENCE","SOCIAL MEDIA","BREAKING NEWS"]=Field(description="This is going to tell in which category the content recides",default="genral")
 
     #!summary considering all the feilds of every object
     
@@ -95,6 +95,7 @@ class InvestigationState(TypedDict):
     supporting_evidence:Annotated[list[dict],operator.add]
     contradicting_evidence:Annotated[list[dict],operator.add]
     risk_assessment:Annotated[list[dict],operator.add]
+    pubmed_evidence:Annotated[list[dict],operator.add]  #! title,publish_date,url,authors,content,claim_id,claim_text
 
 
 
