@@ -16,7 +16,7 @@ from langgraph.checkpoint.memory import InMemorySaver #!stores things in RAM
 parser=StrOutputParser()
 
 
-groq_llm=llms.GEMINI_FALLBACK_LLM
+groq_llm=llms.PRIMARY_GROQ_LLM
 
 
 prompt_template=PromptTemplate(template="""

@@ -15,7 +15,7 @@ from fastapi.responses import Response
 from imagekitio import ImageKit
 from app.Agents.Search_agent.graph  import SEARCH_AGENT
 from utils.validate_input import Validate_input
-from utils.utils_func import rewrite_query
+from utils.utils_func import retrieval_query_rewrite
 from app.Agents.Analysis_agent.graph import ANALYSIS_CHAIN
 from app.config import settings
 from DB.faiss_db import vector_store,update_vector_store
@@ -94,10 +94,12 @@ async def hello(body:dict):
 async def hello(body:dict):
   try:
       print(body['query'])
-      query=await rewrite_query(body['query'])
+      query=await retrieval_query_rewrite(body['query'])
       print(query)
-      context=retrieve_data_with_flashrank(query)
-      result=await ANALYSIS_CHAIN.ainvoke({'user_query':query,'analysis_data':context})
+      if(str(query['is_relevant']).lower()=="false"):
+         return JSONResponse({'success':'true','msg':query['query']}) 
+      context=retrieve_data_with_flashrank(query['query'])
+      result=await ANALYSIS_CHAIN.ainvoke({'user_query':query['query'],'analysis_data':context})
       return JSONResponse({'success':'true','msg':result})
 
   except Exception as e:

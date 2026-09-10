@@ -175,17 +175,15 @@ def format_research_output(raw_output) -> str:
     # Final cleanup
     return text.strip()
 
-class OptimizedQuery(BaseModel):
-    query:str = Field(
-        description="optimized query."
-    )
+class QueryRewrite(BaseModel):
+    relevant:str=Field(...,description="return true if query is relvant else false")
+    query: str
 
-
-structured_output=llms.PRIMARY_GROQ_LLM.with_structured_output(OptimizedQuery,method="json_schema")
-async def rewrite_query(query="nothing",sys_prompt="just"):
+structured_output=llms.PRIMARY_GROQ_LLM.with_structured_output(QueryRewrite,method="json_schema")
+async def retrieval_query_rewrite(query="nothing",sys_prompt="just"):
     try:
         result=await structured_output.ainvoke([{"role":"system","content":sys_prompt},{"role":"user","content":query}])
-        return result.query
+        return {"query":result.query,"is_relevant":result.relevant}
     except Exception as e:
         print("error in rewrite_query")
         print(str(e))
