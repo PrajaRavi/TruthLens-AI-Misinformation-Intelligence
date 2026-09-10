@@ -1,27 +1,26 @@
 from  app.Agents.Main_agent.state import InvestigationState,Claim
 from langchain_tavily import TavilySearch
 from typing import Literal
+from app.config import settings
 from pydantic import BaseModel,Field
+tavily_tool=TavilySearch(max_results=2,topic="general",TAVILY_API_KEY=settings.TAVILY_API_KEY)
 async def search_web_evidence_worker(payload:dict) ->InvestigationState:
-    tavily_tool=TavilySearch(max_results=2,topic="general")
     print("search_web_evidence start")
     # print(payload)
     claim=payload['claim']
     claim_id=payload['id']
     th=payload['th']
+    print(claim)
     user_input_id=payload['user_input_id']
-    response = tavily_tool.invoke(
-        input=claim,
-        max_results=2,
-    )
-
+    response = tavily_tool.invoke(claim)
+    print(response)
     evidence = []
 
     for result in response.get("results", []):
         score=float(result.get("score"))
         if(score>th):     
             evidence.append({
-                "source": result.get("title"),
+                "source":"WEB",
                 "title": result.get("title"),
                 "claim_text":claim,
                 "claim_id":claim_id,
@@ -36,27 +35,3 @@ async def search_web_evidence_worker(payload:dict) ->InvestigationState:
     return {"web_evidence":evidence}
 
 
-class EvidenceAnalysis(BaseModel):
-    relationship: Literal[
-        "supporting",
-        "contradicting",
-        "neutral"
-    ]
-
-    matching_score: float = Field(
-        ge=0.0,
-        le=1.0,
-        description=(
-            "How strongly the evidence is related to and useful "
-            "for evaluating the claim. 0 means unrelated and 1 "
-            "means directly relevant."
-        )
-    )
-
-    reason: str = Field(
-        description=(
-            "Explain why the evidence supports, contradicts, "
-            "or is neutral toward the claim."
-        )
-        
-    )

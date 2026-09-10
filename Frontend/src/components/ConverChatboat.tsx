@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import MarkdownRenderer from "@/utils/MDRenderer";
+import { useUser } from "@/context/counterContext";
 
 interface Message {
   id: number;
@@ -33,6 +34,7 @@ const ContextChatbot: React.FC<ContextChatbotProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
+  const {AnalysisChatboatFeedDataSignal}=useUser()
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   let [AnalysisChatBoatFeedDataLoading,setAnalysisChatBoatFeedDataLoading]=useState<boolean>(false)
@@ -54,8 +56,7 @@ async function feed_data_to_analysis_assistant(){
       let AIMsg:Message={content:"",id:0,role:"assistant"}
       setIsTyping(true)
       // let obj={name:"ravi",id:4,surname:"prajapati"}
-      let {data}=await axios.post("http://localhost:8000/api/chat_with_analysis_assistant",{analysis_data:JSON.stringify
-        (analysisContext),query:input})
+      let {data}=await axios.post("http://localhost:8000/api/chat_with_analysis_assistant",{query:input})
       if(data?.success){
 
         console.log(data)
@@ -83,6 +84,16 @@ async function feed_data_to_analysis_assistant(){
      Auto scroll
   ----------------------------- */
 
+  useEffect(()=>{
+if(AnalysisChatboatFeedDataSignal){
+  setIsTyping(true)
+}
+else{
+  setIsTyping(false)
+
+}
+console.log("analysischatboat",AnalysisChatboatFeedDataSignal)
+},[AnalysisChatboatFeedDataSignal])
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -95,7 +106,7 @@ async function feed_data_to_analysis_assistant(){
 
   const startListening = () => {
     const SpeechRecognition =
-      window.SpeechRecognition ||
+      window?.SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -284,8 +295,7 @@ await feed_data_to_analysis_assistant()
             flex-col
             overflow-hidden
             rounded-2xl
-            border
-            border-gray-200
+            
             bg-white
             shadow-2xl
           "
@@ -376,6 +386,7 @@ await feed_data_to_analysis_assistant()
             className="
               flex-1
               space-y-4
+              w-full
               overflow-y-auto
               bg-white
               px-4
@@ -385,14 +396,14 @@ await feed_data_to_analysis_assistant()
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
+                className={`flex  ${
                   message.role === "user"
                     ? "justify-end"
                     : "justify-start"
                 }`}
               >
                 <div
-                  className={`flex max-w-[85%] gap-2 ${
+                  className={`flex max-w-[85%]  gap-2 ${
                     message.role === "user"
                       ? "flex-row-reverse"
                       : "flex-row"
@@ -432,10 +443,11 @@ await feed_data_to_analysis_assistant()
                       py-2.5
                       text-sm
                       
+                      
                       leading-relaxed
                       ${
                         message.role === "user"
-                          ? "rounded-tr-sm bg-[#7678EF] "
+                          ? "rounded-tr-sm bg-[#7678EF]  "
                           : "rounded-tl-sm bg-gray-100 dark:bg-[#37366d]"
                       }
                     `}
@@ -524,9 +536,10 @@ await feed_data_to_analysis_assistant()
             >
               <input
                 type="text"
-                value={input}
+                value={AnalysisChatboatFeedDataSignal?"analyzing your data...":input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                disabled={AnalysisChatboatFeedDataSignal}
                 placeholder={
                   isListening
                     ? "Listening..."

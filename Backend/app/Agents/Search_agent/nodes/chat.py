@@ -17,13 +17,9 @@ async def chat_node(
     )
     response=None
     if(state['curr']%2!=0):
-        response =  await llm_with_tools.ainvoke(
-            messages
-        )
+        response =  await llm_with_tools.ainvoke(messages)
     else:
-        response =  await llm_with_tools1.ainvoke(
-                     messages
-                 )  
+        response =  await llm_with_tools1.ainvoke(messages)  
     curr=int(state['curr'])
     
     return {

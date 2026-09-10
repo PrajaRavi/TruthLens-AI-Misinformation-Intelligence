@@ -63,6 +63,7 @@ export function App() {
 
 
   let [GetuserSignal, setGetuserSignal] = useState<boolean>(false);
+  let [AnalysisChatboatFeedDataSignal,setAnalysisChatboatFeedDataSignal]=useState<boolean>(false)
   let [riskDistribution, setriskDistribution] = useState<RiskDistribution[]>([
     { count: 200, level: "high" },
     { count: 100, level: "critical" },
@@ -495,7 +496,9 @@ export function App() {
         setRecentAnalysis,
         GlobalLoadingState,
         claim_map,
-        risk_asses_map
+        risk_asses_map,
+        AnalysisChatboatFeedDataSignal,
+        setAnalysisChatboatFeedDataSignal
       }}
     >
       <ThemeProvider>

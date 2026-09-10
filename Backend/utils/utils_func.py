@@ -3,6 +3,8 @@ from langchain_community.vectorstores import FAISS
 from urllib.parse import urlparse, parse_qs
 from langchain_ollama  import OllamaEmbeddings
 import trafilatura 
+from pydantic import BaseModel,Field
+from app.config import llms
 import re
 # Global reference holding your FAISS store
 vector_store: FAISS | None = None
@@ -172,3 +174,18 @@ def format_research_output(raw_output) -> str:
 
     # Final cleanup
     return text.strip()
+
+class OptimizedQuery(BaseModel):
+    query:str = Field(
+        description="optimized query."
+    )
+
+
+structured_output=llms.PRIMARY_GROQ_LLM.with_structured_output(OptimizedQuery,method="json_schema")
+async def rewrite_query(query="nothing",sys_prompt="just"):
+    try:
+        result=await structured_output.ainvoke([{"role":"system","content":sys_prompt},{"role":"user","content":query}])
+        return result.query
+    except Exception as e:
+        print("error in rewrite_query")
+        print(str(e))

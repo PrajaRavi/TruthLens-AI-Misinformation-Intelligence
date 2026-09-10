@@ -24,4 +24,5 @@ def who_evidence_fan_out(state:InvestigationState) -> List[Send]|str:
             for claim in claims
         ]
     else:
+        print("❌❌❌❌❌jumping from who_evidence_fan_out to claim_assessment")
         return "claim_assesment"

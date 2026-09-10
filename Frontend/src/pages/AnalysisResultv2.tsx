@@ -28,7 +28,9 @@ import {
 } from "@/components/ui/Card";
 import { UrlType, WebPageDataType, YtDataType } from "./Analyze";
 import MarkdownRenderer from "@/utils/MDRenderer";
+import axios from "axios"
 import ContextChatbot from "@/components/ConverChatboat";
+import { useUser } from "@/context/counterContext";
 
 // ============================================================
 // TYPES
@@ -136,6 +138,7 @@ function EvidenceGroup({
                   <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Evidence {index + 1}
                   </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">{item?.source}</span>
                   <span className="text-xs font-medium text-muted">
                     Match: {(item.matching_score * 100).toFixed(0)}%
                   </span>
@@ -199,6 +202,7 @@ function getRiskBadgeTone(
       return "neutral";
   }
 }
+
 
 function getRiskColor(level: RiskLevel) {
   switch (normalizeRiskLevel(level)) {
@@ -831,13 +835,40 @@ let obj={title:title,claim_assessment:claim_assessment,risk_assessment:risk_asse
   const ITEMS_PER_PAGE = 2;
 
   const [riskPage, setRiskPage] = useState(1);
+  const {setAnalysisChatboatFeedDataSignal}=useUser()
   const [claimPage, setClaimPage] = useState(1);
   let [AnalysisData,setAnalysisData]=useState(obj)
+  async function feed_data_to_analysis_assistant(analysisContext:any){
+    try {
+      setAnalysisChatboatFeedDataSignal(true)
+      let {data}=await axios.post("http://localhost:8000/api/feed_data_to_analysis_assistant",analysisContext)
+      if(data?.success){
+        console.log(data)
+
+        
+    }
+    else{
+      console.log("something went wrong in feed_data_to_analysis_assistant")
+    }
+
+    
+
+    } catch (error) {
+      console.log(error)
+    }
+    finally{
+      setAnalysisChatboatFeedDataSignal(false)
+
+    }
+  }
+
+  
 
   useEffect(()=>{
     setAnalysisData({title:title,claim_assessment:claim_assessment,risk_assessment:risk_assessments,claim_assessment_summary:claim_summary,risk_assessment_summary:risk_summary,sources_count:urls})
-console.log(risk_assessments)
-console.log(claim_assessment)
+// console.log(risk_assessments)
+// console.log(claim_assessment)
+feed_data_to_analysis_assistant({title:title,claim_assessment:claim_assessment,risk_assessment:risk_assessments,claim_assessment_summary:claim_summary,risk_assessment_summary:risk_summary,sources_count:urls})
   },[])
 
   // ==========================================================

@@ -92,6 +92,7 @@ Return:
                 "reason": result.reason,
                 "claim_id":evidence_item['claim_id'],
                 "claim_text": claim_text,
+                "source":"WEB",
                 "evidence_claim":title,
                 "url":url,
                 "user_input_id":state['thread_id']

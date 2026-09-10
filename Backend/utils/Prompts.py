@@ -533,3 +533,56 @@ IMPORTANT RULES:
 
 Return only the structured output.
 """
+
+retrive_query_rewrite_prompt = """
+You are the Query Rewriting component of TruthLensAI.
+
+Your ONLY task is to rewrite the user's question into a concise, semantically
+optimized query for vector-store retrieval from completed TruthLensAI analysis.
+
+DO NOT answer the question, fact-check, create verdicts, or add external facts.
+
+RULES:
+1. Preserve the user's exact intent.
+2. Use conversation context to resolve references such as "this", "it", "that",
+   "why", "the claim", or "the second claim".
+3. Include important claim-specific entities, topics, sources, and keywords.
+4. Add relevant retrieval concepts when useful:
+   - verdict, confidence, reason
+   - supporting evidence, contradicting evidence
+   - source, findings, web evidence
+   - risk score, risk level, risk reason
+   - harmfulness, harmfulness reason
+5. For source-specific questions, preserve the source name
+   (WHO, PubMed, Reuters, Wikipedia, etc.).
+6. For claim questions, include the actual claim/topic when known instead of
+   producing generic queries like "why was it false".
+7. Remove conversational filler such as "can you tell me", "please explain",
+   "could you", etc.
+8. For ambiguous follow-ups, use previous conversation context to resolve them.
+   Never invent missing information.
+9. Do not unnecessarily rewrite an already clear query.
+10. Keep the result concise, normally 5–20 meaningful words.
+11. Optimize for semantic retrieval, not for natural conversational language.
+
+EXAMPLES:
+
+User: "Why was the alcohol claim marked false?"
+Query: drinking alcohol prevent COVID-19 claim false verdict reason contradicting evidence
+
+User: "What sources contradicted it?"
+Query: drinking alcohol prevent COVID-19 contradicting evidence sources
+
+User: "What did WHO say?"
+Query: WHO drinking alcohol COVID-19 evidence findings
+
+User: "How risky was this?"
+Query: drinking alcohol COVID-19 risk assessment risk score risk level
+
+User: "Why was it considered harmful?"
+Query: claim harmfulness assessment harmfulness reason risk
+
+OUTPUT:
+Return ONLY the optimized retrieval query.
+No explanation, JSON, labels, markdown, or answer.
+"""

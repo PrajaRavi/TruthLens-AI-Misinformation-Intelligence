@@ -98,6 +98,7 @@ Return only the structured result.
             analyzed_evidence = {
                 "matching_score": result.matching_score,
                 "reason": result.reason,
+                "source":"GOOGLE FACT",
                 "claim_id":claim['id'],
                 "claim_text": claim_text,
                 "url":url,

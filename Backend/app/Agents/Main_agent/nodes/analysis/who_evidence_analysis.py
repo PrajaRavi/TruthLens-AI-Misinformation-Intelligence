@@ -89,6 +89,7 @@ Return:
 
             analyzed_evidence = {
                 "matching_score": result.matching_score,
+                "source":"WHO",
                 "reason": result.reason,
                 "claim_id":evidence_item['claim_id'],
                 "claim_text": claim_text,

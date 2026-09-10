@@ -1,7 +1,10 @@
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+from groq import RateLimitError as GroqRateLimitError,APIConnectionError,InternalServerError
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.genai.errors import APIError,ServerError
+# from google.genai.
 from langchain_nomic import NomicEmbeddings
 from langchain_ollama import ChatOllama
 # Load environment variables
@@ -11,6 +14,7 @@ class Settings:
     # --- GEMINI Models ---
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     GEMINI_FALLBACK_API_KEY = os.getenv("GEMINI_FALLBACK_API_KEY")
+    FANTASTIC_FOUR_GEMINI_KEY=os.getenv("FANTASTIC_FOUR_GEMINI_KEY") #!used in fallback
 
     # --- NOMIC EMBEDDINGS Models ---
     NOMIC_API_KEY = os.getenv("NOMIC_API_KEY")
@@ -79,7 +83,7 @@ os.environ["LANGCHAIN_ENDPOINT"] = os.getenv("LANGSMITH_ENDPOINT", "https://api.
 settings = Settings()
 
 class LLMs:
-    GROQ_LLM=ChatGroq(
+    PRIMARY_GROQ_LLM=ChatGroq(
     model="openai/gpt-oss-120b",
     api_key=settings.GROQ_API_KEY,
     max_tokens=None,
@@ -93,9 +97,21 @@ class LLMs:
     timeout=None,
     max_retries=2,
 )
-    GEMINI_LLM=ChatGoogleGenerativeAI(
+    GROQ_LLM=PRIMARY_GROQ_LLM.with_fallbacks(
+        fallbacks=[GROQ_FALLBACK_LLM],
+        exceptions_to_handle=(GroqRateLimitError,APIConnectionError,InternalServerError)
+    )
+    PRIMARY_GEMINI_LLM=ChatGoogleGenerativeAI(
     model="gemini-3.5-flash-lite",
     api_key=settings.GEMINI_API_KEY,
+    # model="gemini-3.1-flash-lite-image",
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
+    GEMINI_LLM_1=ChatGoogleGenerativeAI(
+    model="gemini-3.5-flash-lite",
+    api_key=settings.FANTASTIC_FOUR_GEMINI_KEY,
     # model="gemini-3.1-flash-lite-image",
     max_tokens=None,
     timeout=None,
@@ -109,6 +125,11 @@ class LLMs:
     timeout=None,
     max_retries=2,
 )
+    GEMINI_LLM=PRIMARY_GEMINI_LLM.with_fallbacks(
+        fallbacks=[GEMINI_LLM_1,GEMINI_FALLBACK_LLM],
+        exceptions_to_handle=(APIError,ServerError)
+
+    )
     phi_llm=ChatOllama(
         model="phi4-mini:3.8b",
         temperature=0.4

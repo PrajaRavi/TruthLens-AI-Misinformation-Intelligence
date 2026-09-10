@@ -77,7 +77,7 @@ Return only the structured classification.
 # Create structured LLM
 # -----------------------------
 
-structured_llm = llms.GEMINI_LLM.with_structured_output(ContentCategory)
+structured_llm = llms.GEMINI_LLM.with_structured_output(ContentCategory,method="json_schema")
 
 
 # -----------------------------

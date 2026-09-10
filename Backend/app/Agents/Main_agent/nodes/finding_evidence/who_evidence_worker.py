@@ -19,8 +19,18 @@ Rules:
 Example:
 "Drinking alcohol helps to defeat coronavirus."
 → "Alcohol prevents COVID-19"
+
+give strucutred output only
 """
+class OptimizedQuery(BaseModel):
+    query:str = Field(
+        description="optimized query."
+    )
+
+structured_output=llms.GEMINI_FALLBACK_LLM.with_structured_output(OptimizedQuery,method="json_schema")
+
 async def who_evidence_worker(payload:dict) ->InvestigationState:
+    print("who evidence worker start")
     tavily_tool = TavilySearch(
     max_results=2,
     topic="general",
@@ -28,10 +38,9 @@ async def who_evidence_worker(payload:dict) ->InvestigationState:
     include_domains=["who.int"],
 )
     old_claim=payload['claim']
-    result=await llms.GEMINI_FALLBACK_LLM.ainvoke([{"role":"system","content":convert_claim_into_who_search_query},{"role":"user","content":old_claim}])
-    claim=result.content
-    print("search_web_evidence start")
-    # print(payload)
+    result=await structured_output.ainvoke([{"role":"system","content":convert_claim_into_who_search_query},{"role":"user","content":old_claim}])
+    claim=result.query
+    print(claim)
     
     claim_id=payload['id']
     th=payload['th']
@@ -58,7 +67,8 @@ async def who_evidence_worker(payload:dict) ->InvestigationState:
                 "user_input_id":payload['user_input_id']
             })
     
-    print("search_web_evidence end")
+    print("who evidence worker end")
+    # print(" end")
     return {"who_evidence":evidence}
 
 

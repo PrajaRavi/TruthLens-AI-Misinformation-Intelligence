@@ -8,7 +8,7 @@ interface MarkdownRendererProps {
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
-    <div className="prose prose-slate max-w-none text-black dark:text-white">
+    <div className="prose prose-slate max-w-none text-black dark:text-white break-all">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {content}
       </ReactMarkdown>

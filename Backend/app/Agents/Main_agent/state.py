@@ -95,6 +95,7 @@ class InvestigationState(TypedDict):
     supporting_evidence:Annotated[list[dict],operator.add]
     contradicting_evidence:Annotated[list[dict],operator.add]
     risk_assessment:Annotated[list[dict],operator.add]
+    claim_assessment:Annotated[list[dict],operator.add]
     pubmed_evidence:Annotated[list[dict],operator.add]  #! title,publish_date,url,authors,content,claim_id,claim_text
 
 
@@ -104,7 +105,6 @@ class InvestigationState(TypedDict):
     # ─────────────────────────────
 
     media_assessment: dict
-    claim_assessment: dict
     context_assessment: dict
     provenance_assessment: dict
 

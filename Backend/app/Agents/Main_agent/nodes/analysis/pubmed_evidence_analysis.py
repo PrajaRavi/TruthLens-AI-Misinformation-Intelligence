@@ -93,6 +93,7 @@ Return:
                 "claim_id":evidence_item['claim_id'],
                 "claim_text": claim_text,
                 "evidence_claim":title,
+                "source":"PUBMED",
                 "url":url,
                 "user_input_id":state['thread_id']
             }

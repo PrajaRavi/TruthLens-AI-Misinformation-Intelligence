@@ -19,6 +19,8 @@ export interface UserContextType {
   GlobalLoadingState:boolean
   claim_map:Map<string, any[]>;
   risk_asses_map:Map<string, any[]>;
+  AnalysisChatboatFeedDataSignal:boolean;
+  setAnalysisChatboatFeedDataSignal:Dispatch<SetStateAction<boolean>>;
 }
 
 // Create the context with an initial value of undefined

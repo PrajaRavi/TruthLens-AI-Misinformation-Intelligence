@@ -4,7 +4,7 @@ from app.config import settings,llms
 from  app.Agents.Main_agent.state import InvestigationState,Claim
 from typing import List
 from langgraph.types import Send
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 
 
 hive_api_key=settings.HIVE_API_KEY
@@ -51,7 +51,7 @@ async def hive_text_moderation(text:str):
     return classes
 # hive text anylasis it will be basically a fan out architecture 
 class HarmAssessment(BaseModel):
-    harmful: bool
+    harmful:str=Field(...,description="return True or False")
     reason: str
 
 sturc_llm_for_hive_analysis=llms.GROQ_FALLBACK_LLM.with_structured_output(HarmAssessment,method="json_schema")
@@ -61,7 +61,9 @@ async def hive_assesment_analysis_worker(payload) ->InvestigationState:
     claim_id=payload['id']
     claim_text=payload['claim']
     user_input_id=payload['user_input_id']
-
+    print("hive worker starts ")
+    print("payload")
+    print(payload)
     data=await hive_text_moderation(claim_text)
 
     
@@ -81,5 +83,7 @@ HIVE MODERATION RESULT:
 """
     result=await sturc_llm_for_hive_analysis.ainvoke(prompt)
     hive_assement=[{'claim_id':claim_id,'claim_text':claim_text,'reason':result.reason,'harmful':result.harmful,"user_input_id":user_input_id}]
+    print("hive worker ends")
+
     return {'hive_assessment':hive_assement}
 

@@ -153,9 +153,9 @@ async def news_search_router(state: dict) -> InvestigationState:
     # ============================================================
     # STEP 5: Generate embedding for actual claim
     # ============================================================
-
+    
     claim_embedding = await asyncio.to_thread(
-        settings.embedding_model.embed_query,
+        llms.embeddings.embed_query,
         claim_text
     )
 

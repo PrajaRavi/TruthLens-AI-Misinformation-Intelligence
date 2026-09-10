@@ -15,8 +15,13 @@ from fastapi.responses import Response
 from imagekitio import ImageKit
 from app.Agents.Search_agent.graph  import SEARCH_AGENT
 from utils.validate_input import Validate_input
+from utils.utils_func import rewrite_query
 from app.Agents.Analysis_agent.graph import ANALYSIS_CHAIN
 from app.config import settings
+from DB.faiss_db import vector_store,update_vector_store
+from services.chunker import perform_chunk
+from services.retriever import retrieve_data_with_flashrank
+import json
 
 from app.Agents.Main_agent.graph import MAIN_AGENT
 from fastapi import (FastAPI)
@@ -71,16 +76,38 @@ async def hello(input:ValidateInput):
 def hello():
   return JSONResponse({'success':'true','msg':"All is well!!!!!! 😊😊😊😊😊🤣🤣🤣🤣🤣"})
 
-@app.post("/api/chat_with_analysis_assistant")
-async def hello(body:AnalysisAssistantFeedData):
+@app.post("/api/feed_data_to_analysis_assistant")
+async def hello(body:dict):
   try:
-      result=await ANALYSIS_CHAIN.ainvoke({'user_query':body.query,'analysis_data':body.analysis_data})
-      return JSONResponse({'success':'true','msg':result})
-      
+      chunks=perform_chunk(800,body)
+      print("="*100)
+      print("chunks printing")
+      print(chunks)
+      await update_vector_store(chunks)
+      return JSONResponse({'success':'true','msg':"chunks created and stored in db"})
   except Exception as e:
        print(str(e))
        return HTTPException(500,{'success':'false','msg':str(e)}) 
-  
+
+      
+@app.post("/api/chat_with_analysis_assistant")
+async def hello(body:dict):
+  try:
+      print(body['query'])
+      query=await rewrite_query(body['query'])
+      print(query)
+      context=retrieve_data_with_flashrank(query)
+      result=await ANALYSIS_CHAIN.ainvoke({'user_query':query,'analysis_data':context})
+      return JSONResponse({'success':'true','msg':result})
+
+  except Exception as e:
+       print(str(e))
+       return HTTPException(500,{'success':'false','msg':str(e)}) 
+
+      
+
+
+
 
 
 
@@ -97,6 +124,7 @@ async def hello(input:ResearchBody):
   print(input)
   try:
      final_result=await MAIN_AGENT.ainvoke({'input_text':input.input,'input_type':input.type,'thread_id':input.thread_id,"content_length_th":200,"th":0.75},config={'configurable':{'thread_id':input.thread_id}})
+    #  print(final_result)
      if(final_result):
        return JSONResponse({'success':'true','msg':final_result})
      else:
