@@ -31,6 +31,7 @@ import MarkdownRenderer from "@/utils/MDRenderer";
 import axios from "axios"
 import ContextChatbot from "@/components/ConverChatboat";
 import { useUser } from "@/context/counterContext";
+import { BACKEND_URL } from "@/utils/constant";
 
 // ============================================================
 // TYPES
@@ -63,6 +64,7 @@ export interface RiskAssessment {
 export interface Evidence {
   matching_score: number;
   reason: string;
+  source?:string;
   claim_id: string;
   claim_text: string;
   evidence_claim: string;
@@ -75,8 +77,8 @@ export interface ClaimAssessment {
   verdict: Verdict;
   confidence: number;
   reason: string;
-  supporting_evidence: Evidence[];
-  contradicting_evidence: Evidence[];
+  supporting_evidence_count: Evidence[];
+  contradicting_evidence_count: Evidence[];
   user_input_id: string;
 }
 
@@ -167,8 +169,8 @@ export interface AnalysisDashboardProps {
   claim_summary:string;
   risk_summary:string;
   urls:UrlType[];
-  title:string;
-  input_type:string;
+  title?:string;
+  input_type?:string;
   WebPageData?:WebPageDataType;
   YtData?:YtDataType;
 
@@ -841,7 +843,7 @@ let obj={title:title,claim_assessment:claim_assessment,risk_assessment:risk_asse
   async function feed_data_to_analysis_assistant(analysisContext:any){
     try {
       setAnalysisChatboatFeedDataSignal(true)
-      let {data}=await axios.post("http://localhost:8000/api/feed_data_to_analysis_assistant",analysisContext)
+      let {data}=await axios.post(`${BACKEND_URL}/api/feed_data_to_analysis_assistant`,analysisContext)
       if(data?.success){
         console.log(data)
 
@@ -1063,14 +1065,14 @@ else{
   return <div className="min-w-0 grid-cols-1 max-w-">
         {/* <h1>{`title-> ${WebPageData.title}`}</h1> */}
         
-      <UrlPreview  key={`htijfi-120`} url={WebPageData?.webpage_url} />
+      <UrlPreview  key={`htijfi-120`} url={String(WebPageData?.webpage_url)} />
                                     
     </div>
 }
     }
     else if(input_type=="image"){
 return <div className="min-w-0 grid-cols-1 max-w-">
-      <UrlPreview  key={`htijfi-120`} url={WebPageData?.webpage_url} />
+      <UrlPreview  key={`htijfi-120`} url={String(WebPageData?.webpage_url)} />
                                     
     </div>
     }
@@ -1137,7 +1139,7 @@ return <div className="min-w-0 grid-cols-1 max-w-">
         <SummaryCard
           title={`You asked`}
           icon={PersonStanding}
-          summary={title}
+          summary={String(title)}
           />
         <UserContent/>
         <div>
@@ -1544,8 +1546,8 @@ export const demoClaimAssessments: ClaimAssessment[] = [
     confidence: 0.96,
     reason:
       "The available evidence directly contradicts the claim and indicates that alcohol consumption does not prevent coronavirus infection.",
-    supporting_evidence: [],
-    contradicting_evidence: [demoEvidence],
+    supporting_evidence_count: [],
+    contradicting_evidence_count: [demoEvidence],
     user_input_id: "RaviPraj",
   },
 
@@ -1557,8 +1559,8 @@ export const demoClaimAssessments: ClaimAssessment[] = [
     confidence: 0.42,
     reason:
       "No sufficient verified evidence was found to establish whether WhatsApp removed video calling globally on the specified date.",
-    supporting_evidence: [],
-    contradicting_evidence: [],
+    supporting_evidence_count: [],
+    contradicting_evidence_count: [],
     user_input_id: "RaviPraj",
   },
 
@@ -1570,8 +1572,8 @@ export const demoClaimAssessments: ClaimAssessment[] = [
     confidence: 0.91,
     reason:
       "The available evidence strongly supports the claim.",
-    supporting_evidence: [demoEvidence],
-    contradicting_evidence: [],
+    supporting_evidence_count: [demoEvidence],
+    contradicting_evidence_count: [],
     user_input_id: "RaviPraj",
   },
 ];
@@ -1588,6 +1590,7 @@ export default function AnalysisDashboardDemo() {
       urls={[{'claim_id':'1',url:"hello"}]}
       claim_summary={"jdifj"}
       risk_summary="jdifjdifj"
+
     />
   );
 }

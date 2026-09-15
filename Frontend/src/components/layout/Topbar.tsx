@@ -71,7 +71,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           </Link>
 
           <Link href="/settings" className="ml-1" aria-label="Profile settings">
-            <Avatar name={user?.name} src={currentUser.avatarUrl} />
+            <Avatar name={String(user?.name)} src={currentUser.avatarUrl} />
           </Link>
         </div>
       </div>

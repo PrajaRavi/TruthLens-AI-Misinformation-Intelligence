@@ -50,7 +50,7 @@ export function MultimodalSignals({
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-700"
+                  className="h-full rounded-full bg-linear-to-r from-primary to-accent transition-all duration-700"
                   style={{ width: `${s.value}%` }}
                 />
               </div>

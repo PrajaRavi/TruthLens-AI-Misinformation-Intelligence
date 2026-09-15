@@ -79,7 +79,7 @@ export default function HistoryPage() {
       key: "content",
       header: "Content",
       render: (a) => (
-        <div className="max-w-[220px]">
+        <div className="max-w-55">
           <p className="truncate font-medium text-foreground">{a.title}</p>
           <p className="truncate text-xs text-muted">{a.submittedContent}</p>
         </div>

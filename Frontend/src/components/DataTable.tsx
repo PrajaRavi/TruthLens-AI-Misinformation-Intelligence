@@ -25,7 +25,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className="w-full overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[720px] border-collapse text-sm">
+      <table className="w-full min-w-180 border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-surface-2/50">
             {columns.map((col) => (

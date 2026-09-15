@@ -16,9 +16,9 @@ export async function searchSources(query = ""): Promise<Source[]> {
   const q = query.trim().toLowerCase();
   const results = q
     ? sources.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) || s.domain.toLowerCase().includes(q)
-      )
+      (s) =>
+        s.name.toLowerCase().includes(q) || s.domain.toLowerCase().includes(q)
+    )
     : sources;
   return delay(results);
 }

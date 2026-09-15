@@ -36,11 +36,11 @@ export interface Evidence {
 export interface ClaimAssessment {
   claim_id: string;
   claim_text: string;
-  verdict: string;
+  verdict: Verdict;
   confidence: number;
   reason: string;
-  supporting_evidence: Evidence[];
-  contradicting_evidence: Evidence[];
+  supporting_evidence_count: Evidence[];
+  contradicting_evidence_count: Evidence[];
   user_input_id: string;
 }
 

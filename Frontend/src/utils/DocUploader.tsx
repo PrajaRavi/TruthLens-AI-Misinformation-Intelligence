@@ -1,6 +1,7 @@
 import React, { useState} from 'react';
 import axios, { AxiosError } from 'axios';
 import { X } from 'lucide-react';
+import { BACKEND_URL } from './constant';
 
 // -------------------------------------------------------------------
 // TypeScript Interfaces
@@ -29,7 +30,7 @@ interface ImageKitUploadResponse {
   customCoordinates: string | null;
 }
 
-const FASTAPI_BASE_URL = 'http://localhost:8000'; // Your FastAPI backend URL
+const FASTAPI_BASE_URL = BACKEND_URL; // Your FastAPI backend URL
 const IMAGEKIT_PUBLIC_KEY = import.meta.env.IMAGEKIT_PUBLIC_KEY||"public_yP80Gt0Hdrw76WuuA2iHLaZCRxk="; // Replace with your ImageKit Public Key
 const IMAGEKIT_UPLOAD_ENDPOINT = 'https://upload.imagekit.io/api/v1/files/upload';
 

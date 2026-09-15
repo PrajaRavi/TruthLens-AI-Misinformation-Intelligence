@@ -3,6 +3,7 @@ import { UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn, formatFileSize } from "@/lib/utils";
 import axios from "axios";
+import { BACKEND_URL } from "@/utils/constant";
 export interface UploadedFile {
   file: File;
   url: string;
@@ -40,7 +41,7 @@ interface UploadZoneProps {
   preview?: (file: UploadedFile) => React.ReactNode;
 }
 
-const FASTAPI_BASE_URL = 'http://localhost:8000'; // Your FastAPI backend URL
+const FASTAPI_BASE_URL = BACKEND_URL; // Your FastAPI backend URL
 const IMAGEKIT_PUBLIC_KEY = import.meta.env.IMAGEKIT_PUBLIC_KEY||"public_yP80Gt0Hdrw76WuuA2iHLaZCRxk="; // Replace with your ImageKit Public Key
 const IMAGEKIT_UPLOAD_ENDPOINT = 'https://upload.imagekit.io/api/v1/files/upload';
 

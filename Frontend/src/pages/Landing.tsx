@@ -58,7 +58,7 @@ export default function Landing() {
           className="flex items-center gap-2.5"
           aria-label="TruthLens AI home"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
             <ScanEye className="h-5 w-5" />
           </span>
           <span>
@@ -156,7 +156,7 @@ export default function Landing() {
           </div>
           <h1 className="mt-6 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
             See what’s true{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
               before it spreads.
             </span>
           </h1>
@@ -241,11 +241,11 @@ export default function Landing() {
                   </p>
                 </div>
               </div>
-              <div className="rounded-xl bg-gradient-to-b from-primary to-accent p-4 text-primary-foreground shadow-lg shadow-primary/20">
+              <div className="rounded-xl bg-linear-to-b from-primary to-accent p-4 text-primary-foreground shadow-lg shadow-primary/20">
                 <p className="text-[11px] font-bold tracking-wide text-primary-foreground/70">
                   TRUTHLENS SCORE
                 </p>
-                <div className="mx-auto mt-5 flex h-28 w-28 items-center justify-center rounded-full border-[10px] border-white/20 bg-white/10">
+                <div className="mx-auto mt-5 flex h-28 w-28 items-center justify-center rounded-full border-10 border-white/20 bg-white/10">
                   <div className="text-center">
                     <p className="text-3xl font-bold">82</p>
                     <p className="text-[10px] font-medium text-white/75">
@@ -295,7 +295,7 @@ export default function Landing() {
                 key={title}
                 className="group rounded-2xl border border-border bg-background p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/5"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 text-primary">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-primary/15 to-accent/15 text-primary">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="mt-6 block text-xs font-bold text-accent">
@@ -353,7 +353,7 @@ export default function Landing() {
       </section>
 
       <section id="trust" className="mx-auto max-w-7xl px-5 pb-24 sm:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary to-accent px-6 py-14 text-center text-primary-foreground shadow-2xl shadow-primary/20 sm:px-12">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-linear-to-br from-primary to-accent px-6 py-14 text-center text-primary-foreground shadow-2xl shadow-primary/20 sm:px-12">
           <div className="absolute inset-0 opacity-15 landing-grid" />
           <div className="relative mx-auto max-w-2xl">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">

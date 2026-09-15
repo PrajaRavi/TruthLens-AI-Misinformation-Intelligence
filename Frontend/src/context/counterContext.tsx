@@ -1,3 +1,4 @@
+import { ClaimAssessment, RiskAssessment } from '@/components/AnalysisResult2';
 import { FactCheckReport } from '@/components/DataTable2';
 import React, { createContext, useContext, Dispatch, SetStateAction } from 'react';
 
@@ -17,8 +18,8 @@ export interface UserContextType {
   RecentAnalysis:FactCheckReport[];
   setRecentAnalysis:Dispatch<SetStateAction<FactCheckReport[]>>;
   GlobalLoadingState:boolean
-  claim_map:Map<string, any[]>;
-  risk_asses_map:Map<string, any[]>;
+  claim_map:Map<string, ClaimAssessment[]>;
+  risk_asses_map:Map<string, RiskAssessment[]>;
   AnalysisChatboatFeedDataSignal:boolean;
   setAnalysisChatboatFeedDataSignal:Dispatch<SetStateAction<boolean>>;
 }

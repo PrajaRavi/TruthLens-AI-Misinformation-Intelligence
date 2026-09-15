@@ -25,7 +25,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div   className="flex items-center cursor-pointer gap-2.5 border-b border-border px-5 py-4">
         <div onClick={()=>{
         router.push("/")
-      }} className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-white shadow-sm">
+      }} className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-primary to-accent text-white shadow-sm">
           <ScanEye className="h-5 w-5" />
         </div>
         <div>
@@ -58,7 +58,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               <Icon
                 className={cn(
-                  "h-[18px] w-[18px] shrink-0",
+                  "h-4.5 w-4.5 shrink-0",
                   active ? "text-primary" : "text-muted-2"
                 )}
               />
@@ -71,7 +71,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Footer / profile */}
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <Avatar name={user?.name} src={currentUser.avatarUrl} />
+          <Avatar name={String(user?.name)} src={currentUser.avatarUrl} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">
               {user?.name}

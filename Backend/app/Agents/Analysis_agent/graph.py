@@ -146,17 +146,6 @@ prompt_template=PromptTemplate(template="""
     Answer:
     "The provided analysis does not contain enough information to answer that."
 
-    ==================================================
-    ROLE
-    ==================================================
-
-    You are an interactive explanation layer over a completed TruthLensAI investigation.
-
-    Analysis investigates.
-    Dashboard displays.
-    You explain and answer questions about the analysis.
-
-    "Ask me anything about this analysis."
     """,input_variables=['analysis_data','user_query'])
 
 ANALYSIS_CHAIN=prompt_template|groq_llm|parser

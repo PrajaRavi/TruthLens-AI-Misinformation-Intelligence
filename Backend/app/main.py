@@ -3,14 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.prompts import PromptTemplate
 from fastapi.responses import StreamingResponse
-from fastapi.exceptions import HTTPException
+
 from langchain.messages import SystemMessage,HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter,Language
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from fastapi.responses import JSONResponse
-from fastapi import Query,status
+from fastapi import Query,status,HTTPException
 from fastapi.responses import Response
 from imagekitio import ImageKit
 from app.Agents.Search_agent.graph  import SEARCH_AGENT
@@ -69,7 +69,7 @@ async def hello(input:ValidateInput):
       data=await Validate_input(input.input)
       return JSONResponse({'success':'true','msg':data})
   except Exception as e:
-      return HTTPException(status_code=500,detail={'success':'false','error':str(e)})
+      raise HTTPException(status_code=500,detail={'success':'false','error':str(e)})
 
   
 @app.get("/")
@@ -99,6 +99,7 @@ async def hello(body:dict):
       if(str(query['is_relevant']).lower()=="false"):
          return JSONResponse({'success':'true','msg':query['query']}) 
       context=retrieve_data_with_flashrank(query['query'])
+      print(context)
       result=await ANALYSIS_CHAIN.ainvoke({'user_query':query['query'],'analysis_data':context})
       return JSONResponse({'success':'true','msg':result})
 
@@ -119,7 +120,20 @@ async def hello(claim_text:str):
   response=await SEARCH_AGENT.ainvoke({'messages':[{'role':'user','content':claim_text}],'curr':1,'max':3})
   print(response['messages'][-1].content)
   return JSONResponse({'success':'true','msg':response['messages'][-1].content})
+  
+"""
+
+@app.get("/api/just-for-fun")
+async def hello():
+  # return {'just':claim_text}
+  num=1
+  try:
+     
+    return JSONResponse({"success":True,"msg":"apna kam hoga hai"},status.HTTP_201_CREATED)
+  except Exception as e:
+     raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR,{"success":False,"msg":"kuch to galat hua hai"})
           
+"""
 
 @app.post("/api/research")
 async def hello(input:ResearchBody):
@@ -130,14 +144,14 @@ async def hello(input:ResearchBody):
      if(final_result):
        return JSONResponse({'success':'true','msg':final_result})
      else:
-       return HTTPException(status_code=500,detail={'success':'false','msg':"Internal server error"})
+       raise HTTPException(status_code=500,detail={'success':'false','msg':"Internal server error"})
         
     
   except Exception as e:
     print("="*100)
     print("error occured")
     print(e)
-    return HTTPException(status_code=500,detail={'success':'false','msg':str(e)})
+    raise HTTPException(status_code=500,detail={'success':'false','msg':str(e)})
 
 @app.get("/api/imagekit-auth")
 def generate_imagekit_signature():

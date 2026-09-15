@@ -12,7 +12,7 @@ export default function NotFound() {
 
       <section className="not-found-enter relative w-full max-w-xl text-center">
         <Link href="/" className="mx-auto inline-flex items-center gap-2.5 text-left" aria-label="Return to TruthLens AI home">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
             <ScanEye className="h-5 w-5" />
           </span>
           <span><span className="block text-sm font-bold">TruthLens AI</span><span className="block text-[10px] font-medium tracking-wide text-muted">MISINFORMATION INTELLIGENCE</span></span>

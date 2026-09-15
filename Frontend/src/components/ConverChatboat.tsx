@@ -11,6 +11,7 @@ import {
 import axios from "axios";
 import MarkdownRenderer from "@/utils/MDRenderer";
 import { useUser } from "@/context/counterContext";
+import { BACKEND_URL } from "@/utils/constant";
 
 interface Message {
   id: number;
@@ -56,7 +57,7 @@ async function feed_data_to_analysis_assistant(){
       let AIMsg:Message={content:"",id:0,role:"assistant"}
       setIsTyping(true)
       // let obj={name:"ravi",id:4,surname:"prajapati"}
-      let {data}=await axios.post("http://localhost:8000/api/chat_with_analysis_assistant",{query:input})
+      let {data}=await axios.post(`${BACKEND_URL}/api/chat_with_analysis_assistant`,{query:input})
       if(data?.success){
 
         console.log(data)
@@ -105,9 +106,7 @@ console.log("analysischatboat",AnalysisChatboatFeedDataSignal)
   ----------------------------- */
 
   const startListening = () => {
-    const SpeechRecognition =
-      window?.SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =(window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert("Speech recognition is not supported in this browser.");
@@ -289,8 +288,8 @@ await feed_data_to_analysis_assistant()
             right-5
             z-50
             flex
-            h-[520px]
-            w-[380px]
+            h-130
+            w-95
             max-w-[calc(100vw-24px)]
             flex-col
             overflow-hidden

@@ -2,15 +2,15 @@ import {
   CheckCircle2,
   FileText,
   ListChecks,
-  Quote,
+  // Quote,
   ShieldCheck,
 } from "lucide-react";
 import { RiskScore } from "@/components/RiskScore";
 import { RiskBadge } from "@/components/RiskBadge";
-import { ClaimCard } from "@/components/ClaimCard";
-import { SourceCard } from "@/components/SourceCard";
-import { EvidenceCard } from "@/components/EvidenceCard";
-import { MultimodalSignals } from "@/components/MultimodalSignals";
+// import { ClaimCard } from "@/components/ClaimCard";
+// import { SourceCard } from "@/components/SourceCard";
+// import { EvidenceCard } from "@/components/EvidenceCard";
+// import { MultimodalSignals } from "@/components/MultimodalSignals";
 import { Disclaimer, DemoDataTag } from "@/components/states";
 import {
   Card,
@@ -68,7 +68,7 @@ export function AnalysisResults({ analysis }: { analysis: Analysis }) {
           <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-center">
             <div className="flex flex-col items-center gap-2">
               <RiskScore score={analysis.riskScore} level={analysis.riskLevel} />
-              <p className="max-w-[200px] text-center text-xs text-muted-2">
+              <p className="max-w-50 text-center text-xs text-muted-2">
                 AI-generated assessment based on available evidence.
               </p>
             </div>

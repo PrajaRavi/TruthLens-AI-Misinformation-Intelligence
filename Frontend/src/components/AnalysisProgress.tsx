@@ -36,7 +36,7 @@ export function AnalysisProgress({ steps }: { steps: ProcessingStep[] }) {
           </p>
           <div className="mt-4 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-2">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+              className="h-full rounded-full bg-linear-to-r from-primary to-accent transition-all duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -50,7 +50,7 @@ export function AnalysisProgress({ steps }: { steps: ProcessingStep[] }) {
                 {!isLast && (
                   <span
                     className={cn(
-                      "absolute left-[11px] top-6 h-full w-0.5",
+                      "absolute left-2.75 top-6 h-full w-0.5",
                       step.status === "done" ? "bg-primary" : "bg-border"
                     )}
                     aria-hidden

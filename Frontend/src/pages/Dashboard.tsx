@@ -57,7 +57,7 @@ const {toast}=useToast()
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/8 via-surface to-accent/8">
+      <Card className="overflow-hidden border-primary/20 bg-linear-to-br from-primary/8 via-surface to-accent/8">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">

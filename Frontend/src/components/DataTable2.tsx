@@ -29,18 +29,19 @@ export interface RiskAssessment {
 export interface FactCheckReport {
   id: string;
   title: string;
+  url?:string;
   claim_summary?:string;
   risk_summary?:string;
   input_type: string;
   risk_score: number;
   risk_level: string;
   confidence: number;
-  claims: Claim[];
+  claims: number;
   yt_data:YtDataType;
   webpage_data:WebPageDataType;
   sources: UrlType[];
   date: string;
-  risk_assessment: RiskAssessment[];
+  risk_assessment?: RiskAssessment[];
 }
 
 const getRiskBadgeColor = (level: string) => {
@@ -91,7 +92,7 @@ export function DashBoardTableMe({ data }: { data: FactCheckReport[] }) {
       header: "Claims",
       align: "center",
       render: (row) => (
-        <span className="font-mono text-xs font-semibold px-2 py-1 rounded bg-surface-2 border border-border">
+        <span className="font-mono  text-xs font-semibold px-2 py-1 rounded bg-surface-2 border border-border">
           {row.claims}
         </span>
       ),

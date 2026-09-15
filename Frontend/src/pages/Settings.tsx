@@ -48,7 +48,7 @@ setEmail(user?.email)
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex items-center gap-4">
-            <Avatar name={name} className="h-16 w-16 text-lg" />
+            <Avatar name={String(name)} className="h-16 w-16 text-lg" />
             <Button variant="outline" size="sm">
               Change Avatar
             </Button>

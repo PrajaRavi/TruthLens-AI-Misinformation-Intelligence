@@ -21,7 +21,7 @@ const Sources=lazy(()=>import("@/pages/Sources"))
 // import Login from "@/pages/Login";
 const Login=lazy(()=>import("@/pages/Login"))
 const Signup=lazy(()=>import("@/pages/Signup"))
-import { DataPoint, sampleFactCheckData } from "@/pages/Signup";
+import { DataPoint} from "@/pages/Signup";
 // import ForgotPassword from "@/pages/ForgotPassword";
 const ForgotPassword=lazy(()=>import("@/pages/ForgotPassword"))
 // import ResetPassword from "@/pages/ResetPassword";
@@ -36,6 +36,8 @@ import { DashboardStats, RiskDistribution } from "./types";
 import { FactCheckReport } from "./components/DataTable2";
 import FullScreenLoader from "./pages/FetchUserLoading";
 import axios from "axios";
+import { ClaimAssessment, RiskAssessment } from "./components/AnalysisResult2";
+import { BACKEND_URL } from "./utils/constant";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -72,8 +74,8 @@ export function App() {
   let [WebEvidence, setWebEvidence] = useState<any[]>([]);
   let [AllUserInputId, setAllUserInputId] = useState<any[]>(); //this is of particular user
   let [FilterdClaimAssessment, setFilterdClaimAssessment] = useState<any[]>([]);
-  let [claim_map, setclaim_map] = useState(new Map<string, any[]>());
-  let [risk_asses_map, setrisk_asses_map] = useState(new Map<string, any[]>());
+  let [claim_map, setclaim_map] = useState(new Map<string, ClaimAssessment[]>());
+  let [risk_asses_map, setrisk_asses_map] = useState(new Map<string, RiskAssessment[]>());
   let [GlobalLoadingState, setGlobalLoadingState] = useState<boolean>(false);
 
   let [RecentAnalysis, setRecentAnalysis] =
@@ -365,6 +367,7 @@ export function App() {
           yt_data:{thumbnail:item.thumbnail,title:item.url_title,video_url:item.url},
           
           
+          
           confidence: item.confidence,
           date: formatDate(formattedDate),
           // sources: [...Websources, ...Factsources],
@@ -407,7 +410,7 @@ export function App() {
     // alert(localStorage.getItem(AnalysisData)=="undefined")
     if(localStorage.getItem(AnalysisData)){
       // alert("hii")
-      result=JSON.parse(localStorage.getItem(AnalysisData))
+      result=JSON.parse(String(localStorage.getItem(AnalysisData)))
     }
     else{
 
@@ -471,7 +474,7 @@ export function App() {
   async function feed_data_to_analysis_assistant(){
     try {
       let obj={name:"ravi",id:4,surname:"prajapati"}
-      let {data}=await axios.post("http://localhost:8000/api/feed_data_to_analysis_assistant",{msg:JSON.stringify(obj)})
+      let {data}=await axios.post(`${BACKEND_URL}/api/feed_data_to_analysis_assistant`,{msg:JSON.stringify(obj)})
       console.log(data)
     } catch (error) {
       console.log(error)

@@ -15,9 +15,9 @@ export function AuthShell({
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-primary/12 via-background to-accent/12 p-10 lg:flex">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-primary/12 via-background to-accent/12 p-10 lg:flex">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-primary to-accent text-white">
             <ScanEye className="h-5 w-5" />
           </div>
           <div>
@@ -69,7 +69,7 @@ export function AuthShell({
             href="/"
             className="mb-8 flex items-center gap-2.5 lg:hidden"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-primary to-accent text-white">
               <ScanEye className="h-5 w-5" />
             </div>
             <p className="text-sm font-bold text-foreground">TruthLens AI</p>

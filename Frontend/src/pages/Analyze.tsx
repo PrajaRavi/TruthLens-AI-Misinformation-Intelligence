@@ -35,6 +35,7 @@ import { useUser } from "@/context/counterContext";
 import {  ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
 import { AnalysisDashboard } from "./AnalysisResultv2";
 import { AnalysisData } from "@/lib/constants";
+import { BACKEND_URL } from "@/utils/constant";
 export interface UrlType{
   url:string;
   claim_id:string;
@@ -42,7 +43,7 @@ export interface UrlType{
 
 type Stage = "input" | "processing" | "results";
 
-const FASTAPI_BASE_URL = `http://localhost:8000`;
+const FASTAPI_BASE_URL = BACKEND_URL;
 const tabItems = [
   { value: "text", label: "Text", icon: <FileText className="h-4 w-4" /> },
   { value: "image", label: "Image", icon: <ImageIcon className="h-4 w-4" /> },
@@ -97,7 +98,7 @@ export function AnalyzeClient() {
   const [author, setAuthor] = useState("");
   const [pubDate, setPubDate] = useState("");
   const { user,setGetuserSignal } = useUser();
-  let [SourceUrl,setSourceUrl]=useState<string>("")
+  let [SourceUrl,setSourceUrl]=useState<UrlType[]>([{claim_id:"hello",url:"ht"}])
 
   const [url, setUrl] = useState("");
   const [imageFile, setImageFile] = useState<UploadedFile | null>(null);
@@ -126,14 +127,14 @@ export function AnalyzeClient() {
         
 
         
-        setClaimAssessment(temp_claim_assessment)
+        setClaimAssessment(temp_claim_assessment as ClaimAssessment[])
         setClaimSummary(String(found?.claim_summary))
-        setRiskAssesment(temp_risk_assessment)
+        setRiskAssesment(temp_risk_assessment as RiskAssessment[])
         setRiskSummary(String(found?.risk_summary))
         // setUrls(found?.sources)
         setYtData(found?.yt_data)
         setWebPageData(found?.webpage_data)
-        setTab(found?.input_type);
+        setTab(found?.input_type as InputType);
         setSourceUrl(found.sources)
         let obj={title:found.title,claim_assessment:temp_claim_assessment,risk_assessment:temp_risk_assessment,claim_assessment_summary:found?.claim_summary,risk_assessment_summary:found?.risk_summary,sources_count:found.sources}
 
@@ -239,7 +240,7 @@ export function AnalyzeClient() {
       .insert({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title,claim_count,sources_count})
       .select()
       .single(); //now this data contains the newly created row
-  let prevCachedData=JSON.parse(localStorage.getItem(AnalysisData));
+  let prevCachedData=JSON.parse(String(localStorage.getItem(AnalysisData)));
   prevCachedData.push({id,text: text, type: tab, user_id: user_id,created_at:createdAt,risk_score,risk_level,confidence,claim_assessment_summary,risk_assessment_summary,url:url,thumbnail:thumbnail,url_title:url_title,claim_count,sources_count});
     localStorage.setItem(AnalysisData,JSON.stringify(prevCachedData))
   
@@ -773,12 +774,12 @@ saveRiskAssessment([
         if(tab=="text"){
           //! in the case of text only i have to save user input before calling the research api
           //! in case of url,image,audio we have to store url and as well as the text content so we will store userinput after api call
-          data=await saveUserInput(text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"","","",response.claim_count,response.sources_count);
+          data=await saveUserInput(text,tab,Number(user?.id),user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,"","","",response.claim_count,response.sources_count);
           
         }
         else if(tab=="image" || tab=="url"){
 
-          data=await saveUserInput(response.input_text,tab,user?.id,user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url,response.claim_count,response.sources_count);
+          data=await saveUserInput(response.input_text,tab,Number(user?.id),user_input_id,createdAt,response.risk_score,response.risk_level,response.confidence,response.claim_assessment_summary,response.risk_assessment_summary,response.input_url,response.thumbnail,response.input_url,response.claim_count,response.sources_count);
         }
         
         if(data.length==0){

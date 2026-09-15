@@ -103,7 +103,7 @@ def search_pubmed_detailed(query, retmax=3,api_key=None,claim_id=0,claim_text="h
                 "relevance_score":score,
                 "url": pubmed_url,
                 # "doi_url": doi_url,
-                "content": abstract[0:401], #! during analysis first i will break whole content into individual chunks of 400char and then use flashrank for getting most relevant document
+                "content": abstract[0:601], #! during analysis first i will break whole content into individual chunks of 400char and then use cosine similarity for getting most relevant document
                 "claim_id":claim_id,
                 "claim_text":claim_text,
                 "user_input_id":thread_id,
