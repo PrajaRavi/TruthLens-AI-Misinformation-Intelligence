@@ -3,6 +3,8 @@ from langchain_community.vectorstores import FAISS
 from urllib.parse import urlparse, parse_qs
 from langchain_ollama  import OllamaEmbeddings
 import trafilatura 
+from flashrank.Ranker import Ranker, RerankRequest
+
 from pydantic import BaseModel,Field
 from app.config import llms
 import re
@@ -187,3 +189,23 @@ async def retrieval_query_rewrite(query="nothing",sys_prompt="just"):
     except Exception as e:
         print("error in rewrite_query")
         print(str(e))
+
+def get_result(query,passages,choice):
+  if choice == "Nano":
+    ranker = Ranker()
+  elif choice == "Small":
+    ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2", cache_dir="/opt")
+  elif choice == "Medium":
+    ranker = Ranker(model_name="rank-T5-flan", cache_dir="/opt")
+  elif choice == "Large":
+    ranker = Ranker(model_name="ms-marco-MultiBERT-L-12", cache_dir="/opt")
+  rerankrequest = RerankRequest(query=query, passages=passages)
+  results = ranker.rerank(rerankrequest)
+  # print(results)
+
+  return results
+
+def create_context(flashrank_result:dict):
+  context="\n".join([doc['text'] for doc in flashrank_result])
+  return context
+

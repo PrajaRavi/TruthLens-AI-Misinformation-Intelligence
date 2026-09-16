@@ -15,7 +15,7 @@ def News_router_fan_out(state:InvestigationState) -> List[Send]|str:
         
     return [
             Send(
-                node="news_search_router",  # Target node name registered in the graph
+                node="news_search_router_worker",  # Target node name registered in the graph
                 arg={
                     'claim':claim['text'],'id':claim['id'],'th':th,'user_input_id':state['thread_id']
                 }

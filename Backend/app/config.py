@@ -18,6 +18,7 @@ class Settings:
 
     # --- NOMIC EMBEDDINGS Models ---
     NOMIC_API_KEY = os.getenv("NOMIC_API_KEY")
+    THENEWSAPI_KEY=os.getenv("THE_NEWS_API_KEY")
 
 
     # --- VECTOR DB (QDRANT)[NOt working] ---

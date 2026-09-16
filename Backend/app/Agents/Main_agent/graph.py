@@ -19,12 +19,14 @@ from .nodes.Input_classification.input_router import input_router
 from .nodes.event_extrator_from_input_text import event_extrator_from_input_text
 from .nodes.finding_evidence.hive.hive_worker import hive_assesment_analysis_worker
 from .nodes.finding_evidence.who_evidence_worker import who_evidence_worker
+from .nodes.News.News_router_worker import news_search_router
 from .nodes.finding_evidence.pubmed_evidence_worker import pubmed_evidence_worker
 from .nodes.calc_overall_score import calc_max_risk_score_and_max_confidence
 from .nodes.fanOut.hive_fan_out import hive_assesment_fanout
 from .nodes.fanOut.google_fact_fan_out import fan_out_evidence_fact
 from .nodes.fanOut.web_search_fan_out import fan_out_evidence_web
 from .nodes.fanOut.who_evidence_fan_out import who_evidence_fan_out
+from .nodes.fanOut.News_router_fan_out import News_router_fan_out
 from .nodes.fanOut.pubmed_evidence_fan_out import pubmed_evidence_fan_out
 from .nodes.assign_category import assign_category
 from .nodes.health_and_science import health_and_science
@@ -62,6 +64,8 @@ graph.add_node("who_evidence_worker", who_evidence_worker)
 # graph.add_node("pubmed_evidence_worker", pubmed_evidence_worker)
 graph.add_node("who_evidence_analysis", who_evidence_analysis)
 graph.add_node("health_and_science", health_and_science)
+graph.add_node("news_search_router_worker", news_search_router)
+# graph.add_node("health_and_science", health_and_science)
 # graph.add_node("finding_evidence", finding_evidence)
 graph.add_node("pubmed_evidence_analysis", pubmed_evidence_analysis)
 graph.add_node("calc_max_risk_score_and_max_confidence", calc_max_risk_score_and_max_confidence)
@@ -82,11 +86,13 @@ graph.add_edge("extract_claims", "finding_evidence")
 # graph.add_edge("finding_evidence","health_and_science")
 graph.add_conditional_edges("finding_evidence",fan_out_evidence_fact,["google_fact_checks_worker"])
 graph.add_conditional_edges("finding_evidence",fan_out_evidence_web,["search_web_evidence_worker"])
+graph.add_conditional_edges("finding_evidence",News_router_fan_out,["news_search_router_worker"])
 graph.add_edge("google_fact_checks_worker","evidence_analysis")
 graph.add_edge("search_web_evidence_worker","web_evidence_analysis")
 
 graph.add_edge("web_evidence_analysis","health_and_science")
 graph.add_edge("evidence_analysis","health_and_science")
+graph.add_edge("news_search_router_worker","health_and_science")
 graph.add_conditional_edges("health_and_science",who_evidence_fan_out,{"who_evidence_worker":"who_evidence_worker","claim_assesment":"claim_assesment"})
 graph.add_conditional_edges("health_and_science",pubmed_evidence_fan_out,{"pubmed_evidence_worker":"pubmed_evidence_worker","claim_assesment":"claim_assesment"})
 graph.add_edge("pubmed_evidence_worker","pubmed_evidence_analysis")
