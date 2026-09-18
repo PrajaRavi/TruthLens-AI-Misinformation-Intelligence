@@ -36,8 +36,8 @@ import { DashboardStats, RiskDistribution } from "./types";
 import { FactCheckReport } from "./components/DataTable2";
 import FullScreenLoader from "./pages/FetchUserLoading";
 import axios from "axios";
-import { ClaimAssessment, RiskAssessment } from "./components/AnalysisResult2";
 import { BACKEND_URL } from "./utils/constant";
+import { ClaimAssessment, RiskAssessment } from "./pages/AnalysisResultv2";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;

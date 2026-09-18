@@ -9,13 +9,6 @@ import { ThemeToggle } from "@/components/theme";
 import { useToast } from "@/components/ui/Toast";
 import {supabase} from "../utils/supabase"
 import { useNavigate } from "react-router-dom";
-import AnalysisResultDemo from "@/components/AnalysisResult2";
-import { AreaChart } from "@/components/charts/AreaChart1";
-import { DashBoardTableMe, FactCheckReport } from "@/components/DataTable2";
-import AnalysisDashboard from "./AnalysisResultv2";
-import { DashboardLayout } from "@/App";
-import WarningTyping from "@/utils/WarningTyping";
-import ContextChatbot from "@/components/ConverChatboat";
 export interface DataPoint {
   x: string;
   y: number;

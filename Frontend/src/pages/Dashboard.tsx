@@ -36,7 +36,7 @@ import { useState } from "react";
 import { useUser } from "@/context/counterContext";
 import { supabase } from "@/utils/supabase";
 import { useToast } from "@/components/ui/Toast";
-import { DataPoint, sampleFactCheckData} from "./Signup";
+import { DataPoint} from "./Signup";
 import { CircularLoader } from "@/utils/CircularLoader";
 
 const riskColors: Record<string, string> = {

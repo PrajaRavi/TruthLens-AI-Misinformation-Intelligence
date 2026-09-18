@@ -114,7 +114,7 @@ export interface DashboardStats {
   verifiedClaims?: number;
   sourcesChecked: number;
   averageConfidence: number;
-  
+
 }
 
 export interface RiskDistribution {

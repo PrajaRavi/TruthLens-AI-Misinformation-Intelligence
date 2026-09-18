@@ -1,5 +1,5 @@
-import { ClaimAssessment, RiskAssessment } from '@/components/AnalysisResult2';
 import { FactCheckReport } from '@/components/DataTable2';
+import { ClaimAssessment, RiskAssessment } from '@/pages/AnalysisResultv2';
 import React, { createContext, useContext, Dispatch, SetStateAction } from 'react';
 
 // Define the structure of your User object

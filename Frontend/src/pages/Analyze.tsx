@@ -32,8 +32,7 @@ import axios from "axios";
 import { supabase } from "@/utils/supabase";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@/context/counterContext";
-import {  ClaimAssessment ,demoClaimAssessments,demoRiskAssessments,RiskAssessment} from "@/components/AnalysisResult2";
-import { AnalysisDashboard } from "./AnalysisResultv2";
+import { AnalysisDashboard, ClaimAssessment, RiskAssessment } from "./AnalysisResultv2";
 import { AnalysisData } from "@/lib/constants";
 import { BACKEND_URL } from "@/utils/constant";
 export interface UrlType{
