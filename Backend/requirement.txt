@@ -16,6 +16,10 @@ langchain-openai>=0.2.0
 # langchain-google-genai>=2.0.0
 # langchain-groq>=0.2.0
 
+# --- Cloud and deployment ---
+  imagekitio
+  
+
 # --- Vector Store & Embeddings (For RAG/Memory) ---
 # langchain-chroma>=0.1.0
 # faiss-cpu>=1.8.0
