@@ -6,7 +6,9 @@ from app.config import llms,settings
 from utils.utils_func import extract_webpage_content,get_result,create_context
 from langchain_classic.utils.math import cosine_similarity
 from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
+
 splitter = RecursiveCharacterTextSplitter(chunk_size=600,chunk_overlap=30)
+
 
 
 
