@@ -26,10 +26,10 @@ import json
 from app.Agents.Main_agent.graph import MAIN_AGENT
 from fastapi import (FastAPI)
 origins = [
-    "http://localhost:3000",      # React default port
-    "http://localhost:5173",      # Vite default port
-    "http://127.0.0.1:5173",
-    "https://your-domain.com",    # Production frontend URL
+    # "http://localhost:3000",      # React default port
+    # "http://localhost:5173",      # Vite default port
+    # "http://127.0.0.1:5173",
+    "https://truthlensai-vqrl.onrender.com",    # Production frontend URL
 ]
 import os
 from pydantic import BaseModel
