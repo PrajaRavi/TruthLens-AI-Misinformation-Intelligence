@@ -1,7 +1,7 @@
 # vector_store_manager.py
 from langchain_community.vectorstores import FAISS
 from urllib.parse import urlparse, parse_qs
-from langchain_ollama  import OllamaEmbeddings
+# from langchain_ollama  import OllamaEmbeddings
 import trafilatura 
 from flashrank.Ranker import Ranker, RerankRequest
 
@@ -11,10 +11,6 @@ import re
 # Global reference holding your FAISS store
 vector_store: FAISS | None = None
 
-embeddings=OllamaEmbeddings(
-                model="embeddinggemma:latest",
-                temperature=0.5,
-                dimensions=512)
 
 
 
@@ -80,7 +76,7 @@ async def update_vector_store(chunks):
     global vector_store
     if vector_store is None:
         # Initialize if first time
-        vector_store = await FAISS.afrom_documents(chunks, embeddings)
+        vector_store = await FAISS.afrom_documents(chunks, llms.embeddings)
     else:
         # Add to existing in-memory store
         await vector_store.aadd_documents(chunks)

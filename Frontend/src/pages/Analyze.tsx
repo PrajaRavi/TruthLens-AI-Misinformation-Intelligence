@@ -639,6 +639,11 @@ saveRiskAssessment([
   */
   async function runAnalysis() {
     // console.log(url)
+    return toast({
+          type: "success",
+          title: "coming soon",
+          description: "you can't run analysis!!!",
+        })
     if (!canAnalyze) return;
     if (tab =="audio" ||tab=="video") {
       return toast({

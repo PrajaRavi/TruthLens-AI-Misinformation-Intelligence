@@ -1,4 +1,4 @@
-from langchain_ollama import ChatOllama,OllamaEmbeddings
+# from langchain_ollama import ChatOllama,OllamaEmbeddings
 from langchain_groq import ChatGroq
 from langchain_nomic import NomicEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -23,13 +23,3 @@ gemini_llm = ChatGoogleGenerativeAI(
     max_retries=2,
 )
 
-phi_llm=ChatOllama(
-    model="phi4-mini:3.8b",
-    temperature=0.4
-)
-
-
-llama=ChatOllama(
-    model="llama3.2:1b",
-    temperature=0.4
-)
